@@ -230,9 +230,9 @@ LTX_RETURN_CODE ltx_reader_process_file(LTXReader *reader, const char filename[]
 	}
 
 	buffer = malloc(ltx_reader_buffer_size);
-	memset(buffer, 0, ltx_reader_buffer_size);
 
 	fread(buffer, ltx_reader_buffer_size-1, 1, file);
+	buffer[ftell(file)] = 0;
 
 	if(feof(file) == 0) {
 		free(buffer);
