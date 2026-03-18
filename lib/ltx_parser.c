@@ -327,3 +327,30 @@ LTX_RETURN_CODE ltx_parser_parse_file(LTX *ltx, const char filename[]) {
 	free(reader);
 	return err;
 }
+
+void ltx_parser_on_include_noop(LTXParser *root, char path[]) {
+	fprintf(
+		stderr, "WARN: (%s:%lu) Inclusion from raw buffer are not yet supported\n",
+		root->cur_file_path, root->cur_line
+	);
+}
+
+LTX_RETURN_CODE ltx_parser_parse_buffer(LTX *ltx, char buffer[], size_t buffer_size) {
+	LTXParser *reader;
+
+	reader = ltx_create_parser();
+	reader->ltx = ltx;
+
+	// Disable file inclusion for raw buffer
+	reader->on_include_directive = ltx_parser_on_include_noop;
+	reader->on_glob_include_directive = ltx_parser_on_include_noop;
+
+	reader->cur_file_path = strdup("<raw buffer>");
+	reader->cur_line = 1;
+
+	_ltx_parser_process_buffer(reader, buffer, buffer_size);
+
+	free(reader->cur_file_path);
+	free(reader);
+	return NO_ERROR;
+}

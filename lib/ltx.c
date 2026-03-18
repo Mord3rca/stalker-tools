@@ -215,6 +215,10 @@ LTX_RETURN_CODE ltx_read_file(LTX *root, const char filename[]) {
 	return ltx_parser_parse_file(root, filename);
 }
 
+LTX_RETURN_CODE ltx_read_buffer(LTX *root, char buffer[], size_t buffer_size) {
+	return ltx_parser_parse_buffer(root, buffer, buffer_size);
+}
+
 LTXSection *ltx_find_section(LTX *root, const char name[]) {
 	LTXSection *cur;
 	if (!root->sections)

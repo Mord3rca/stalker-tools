@@ -67,6 +67,7 @@ void free_ltx(LTX*);
 
 LTX *ltx_create_from_file(const char[], LTX_RETURN_CODE*);
 LTX_RETURN_CODE ltx_read_file(LTX*, const char[]);
+LTX_RETURN_CODE ltx_read_buffer(LTX*, char[], size_t);
 
 LTXSection *ltx_find_section(LTX*, const char[]);
 LTXSection *ltx_create_new_section(LTX*, const char[]);
