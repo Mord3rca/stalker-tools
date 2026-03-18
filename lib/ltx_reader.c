@@ -48,7 +48,8 @@ struct _LTXReader_s {
 	void (*on_new_line)(LTXReader*, char[]);
 	void (*on_new_key)(LTXReader*, char[], char[]);
 	void (*on_include_directive)(LTXReader*, char[]);
-	void (*on_new_section)(LTXReader*, char[], char[], char[]);
+	void (*on_new_section)(LTXReader*, char[], char[]);
+	void (*on_override_section)(LTXReader*, char[], char[]);
 };
 
 LTX_RETURN_CODE ltx_reader_process_file(LTXReader*, const char[]);
@@ -115,12 +116,28 @@ void ltx_reader_resolve_inheritance(LTXReader *root, char inheritance[]) {
 }
 
 
-void ltx_reader_default_on_new_section(LTXReader *root, char unused[], char name[], char inheritance[]) {
-	LTXSection *s = ltx_create_new_section(root->ltx, name);
+void ltx_reader_default_on_new_section(LTXReader *root, char name[], char inheritance[]) {
+	LTXSection *s = ltx_find_section(root->ltx, name);
+
+	if (s != NULL) {
+		fprintf(stderr, "ERROR: Section (%s) exist and overwrite flag is not set\n", name);
+		// Should error out
+	}
+
+	s = ltx_create_new_section(root->ltx, name);
 	root->cur_section = s;
 
-	// TODO unused is override flag
 	ltx_reader_resolve_inheritance(root, inheritance);
+}
+
+void ltx_reader_default_on_override_section(LTXReader *root, char name[], char inheritance[]) {
+	LTXSection *s = ltx_find_section(root->ltx, name);
+
+	if (s == NULL) {
+		fprintf(stderr, "ERROR: Section (%s) do not exist and overwrite flag is set\n", name);
+		// Should error out
+	}
+	root->cur_section = s;
 }
 
 void ltx_reader_default_on_new_key(LTXReader *root, char key[], char value[]) {
@@ -168,7 +185,11 @@ void ltx_reader_default_process_line(LTXReader *root, char *line) {
 	if (regexec(&ltx_section_regex, line, max_group, pmatch, 0) == 0) {
 		line[pmatch[2].rm_eo] = 0;
 		line[pmatch[4].rm_eo] = 0;
-		root->on_new_section(root, NULL, line + pmatch[2].rm_so, line + pmatch[4].rm_so);
+		if (pmatch[1].rm_eo == 0)
+			root->on_new_section(root, line + pmatch[2].rm_so, line + pmatch[4].rm_so);
+		else
+			root->on_override_section(root, line + pmatch[2].rm_so, line + pmatch[4].rm_so);
+
 		return;
 	}
 
@@ -187,6 +208,7 @@ LTXReader *ltx_create_reader() {
 	e->on_new_key = ltx_reader_default_on_new_key;
 	e->on_new_line = ltx_reader_default_process_line;
 	e->on_new_section = ltx_reader_default_on_new_section;
+	e->on_override_section = ltx_reader_default_on_override_section;
 	e->on_include_directive = ltx_reader_default_on_include_directive;
 
 	return e;

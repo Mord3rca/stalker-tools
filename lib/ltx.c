@@ -72,6 +72,16 @@ LTXKey *ltx_key_copy(LTXKey *k) {
 	return r;
 }
 
+void ltx_key_set_value(LTXKey *k, const char value[]) {
+	if (value == NULL)
+		return;
+
+	if (k->value != NULL)
+		free(k->value);
+
+	k->value = strdup(value);
+}
+
 // LTXSection methods
 
 LTXSection *ltx_create_section(const char name[]) {
@@ -123,8 +133,14 @@ LTX_RETURN_CODE ltx_section_set_key(LTXSection *sec, const char key[], const cha
 		sec->keys_max_size = nsize;
 	}
 
-	k = ltx_create_key(key, value);
-	sec->keys[sec->keys_size++] = k;
+	k = ltx_section_get_key(sec, key);
+	if (k == NULL) {
+		k = ltx_create_key(key, value);
+		sec->keys[sec->keys_size++] = k;
+	} else {
+		ltx_key_set_value(k, value);
+	}
+
 
 	return NO_ERROR;
 }

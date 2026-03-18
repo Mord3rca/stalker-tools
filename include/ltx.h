@@ -44,6 +44,8 @@ void free_ltx_key(LTXKey*);
 
 LTXKey *ltx_key_copy(LTXKey*);
 
+void ltx_key_set_value(LTXKey*, const char[]);
+
 /*
  * LTXSECTION methods
  */
