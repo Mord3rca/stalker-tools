@@ -7,4 +7,4 @@
 set -xeu
 
 mkdir -p out/
-gcc -Wall -g -I include/ -o out/ltx-reader lib/ltx.c lib/ltx_reader.c src/ltx-reader.c
+gcc -Wall -g -I include/ -o out/ltx-reader lib/ltx.c lib/ltx_parser.c src/ltx-reader.c

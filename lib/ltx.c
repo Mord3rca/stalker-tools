@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "ltx.h"
-#include "ltx_reader.h"
+#include "ltx_parser.h"
 
 const size_t ltx_default_key_array_size = 128;
 const size_t ltx_default_section_array_size = 32;
@@ -31,11 +31,11 @@ const char *ltx_return_code_to_str(LTX_RETURN_CODE err) {
 }
 
 LTX_RETURN_CODE ltx_init(void) {
-	return ltx_reader_init();
+	return ltx_parser_init();
 }
 
 void ltx_cleanup(void) {
-	ltx_reader_cleanup();
+	ltx_parser_cleanup();
 }
 
 // LTXKey methods
@@ -211,7 +211,7 @@ LTX *ltx_create_from_file(const char filename[], LTX_RETURN_CODE *err) {
 }
 
 LTX_RETURN_CODE ltx_read_file(LTX *root, const char filename[]) {
-	return ltx_reader_parse_file(root, filename);
+	return ltx_parser_parse_file(root, filename);
 }
 
 LTXSection *ltx_find_section(LTX *root, const char name[]) {

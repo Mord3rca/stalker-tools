@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ltx_reader.h"
+#include "ltx_parser.h"
 
-const size_t ltx_reader_buffer_size = 256*1024;
-const size_t ltx_reader_max_inheritence = 8;
+const size_t ltx_parser_buffer_size = 256*1024;
+const size_t ltx_parser_max_inheritence = 8;
 
 const char ltx_key_regex_pattern[] = "[[:blank:]]*([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
 const char ltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
@@ -18,7 +18,7 @@ regex_t ltx_key_regex;
 regex_t ltx_include_regex;
 regex_t ltx_section_regex;
 
-LTX_RETURN_CODE ltx_reader_init(void) {
+LTX_RETURN_CODE ltx_parser_init(void) {
 	if (regcomp(&ltx_key_regex, ltx_key_regex_pattern, REG_EXTENDED) != 0)
 		return INIT_ERROR;
 
@@ -31,28 +31,28 @@ LTX_RETURN_CODE ltx_reader_init(void) {
 	return NO_ERROR;
 }
 
-void ltx_reader_cleanup(void) {
+void ltx_parser_cleanup(void) {
 	regfree(&ltx_key_regex);
 	regfree(&ltx_include_regex);
 	regfree(&ltx_section_regex);
 }
 
-typedef struct _LTXReader_s LTXReader;
-struct _LTXReader_s {
+typedef struct _LTXParser_s LTXParser;
+struct _LTXParser_s {
 	LTX *ltx;
 	LTXSection *cur_section;
 
 	size_t cur_line;
 	char *cur_file_path;
 
-	void (*on_new_line)(LTXReader*, char[]);
-	void (*on_new_key)(LTXReader*, char[], char[]);
-	void (*on_include_directive)(LTXReader*, char[]);
-	void (*on_new_section)(LTXReader*, char[], char[]);
-	void (*on_override_section)(LTXReader*, char[], char[]);
+	void (*on_new_line)(LTXParser*, char[]);
+	void (*on_new_key)(LTXParser*, char[], char[]);
+	void (*on_include_directive)(LTXParser*, char[]);
+	void (*on_new_section)(LTXParser*, char[], char[]);
+	void (*on_override_section)(LTXParser*, char[], char[]);
 };
 
-LTX_RETURN_CODE ltx_reader_process_file(LTXReader*, const char[]);
+LTX_RETURN_CODE ltx_parser_process_file(LTXParser*, const char[]);
 
 void _to_unix_path(char path[]) {
 	char *cur = path;
@@ -83,7 +83,7 @@ char *_relative_to(const char *path, const char *file) {
 }
 
 
-void ltx_reader_resolve_inheritance(LTXReader *root, char inheritance[]) {
+void ltx_parser_resolve_inheritance(LTXParser *root, char inheritance[]) {
 	int i;
 	LTXSection *p;
 	LTXSection **ar;
@@ -92,13 +92,13 @@ void ltx_reader_resolve_inheritance(LTXReader *root, char inheritance[]) {
 	if (!inheritance || *inheritance == 0)
 		return;
 
-	ar = calloc(sizeof(LTXSection*), ltx_reader_max_inheritence);
-	memset(ar, 0, sizeof(LTXSection*) * ltx_reader_max_inheritence);
+	ar = calloc(sizeof(LTXSection*), ltx_parser_max_inheritence);
+	memset(ar, 0, sizeof(LTXSection*) * ltx_parser_max_inheritence);
 
 	root->cur_section->inheritance = ar;
 
 	for(i = 0, str = inheritance; ; i++, str = NULL) {
-		if (i >= ltx_reader_max_inheritence) {
+		if (i >= ltx_parser_max_inheritence) {
 			fprintf(stderr, "TOO MUCH INHERITANCE ABORT\n");
 			break;
 		}
@@ -116,7 +116,7 @@ void ltx_reader_resolve_inheritance(LTXReader *root, char inheritance[]) {
 }
 
 
-void ltx_reader_default_on_new_section(LTXReader *root, char name[], char inheritance[]) {
+void ltx_parser_default_on_new_section(LTXParser *root, char name[], char inheritance[]) {
 	LTXSection *s = ltx_find_section(root->ltx, name);
 
 	if (s != NULL) {
@@ -127,10 +127,10 @@ void ltx_reader_default_on_new_section(LTXReader *root, char name[], char inheri
 	s = ltx_create_new_section(root->ltx, name);
 	root->cur_section = s;
 
-	ltx_reader_resolve_inheritance(root, inheritance);
+	ltx_parser_resolve_inheritance(root, inheritance);
 }
 
-void ltx_reader_default_on_override_section(LTXReader *root, char name[], char inheritance[]) {
+void ltx_parser_default_on_override_section(LTXParser *root, char name[], char inheritance[]) {
 	LTXSection *s = ltx_find_section(root->ltx, name);
 
 	if (s == NULL) {
@@ -140,7 +140,7 @@ void ltx_reader_default_on_override_section(LTXReader *root, char name[], char i
 	root->cur_section = s;
 }
 
-void ltx_reader_default_on_new_key(LTXReader *root, char key[], char value[]) {
+void ltx_parser_default_on_new_key(LTXParser *root, char key[], char value[]) {
 	if (root->cur_section == NULL) {
 		fprintf(stderr, "cannot insert key into null section\n");
 		return;
@@ -149,14 +149,13 @@ void ltx_reader_default_on_new_key(LTXReader *root, char key[], char value[]) {
 	ltx_section_set_key(root->cur_section, key, value);
 }
 
-void ltx_reader_default_on_include_directive(LTXReader *root, char path[]) {
+void ltx_parser_default_on_include_directive(LTXParser *root, char path[]) {
 	LTX_RETURN_CODE err;
 	char *from = root->cur_file_path;
 	char *to = _relative_to(from, path);
 	size_t sline = root->cur_line;
 
-	//err = ltx_read_file(root, to); // TODO
-	err = ltx_reader_process_file(root, to);
+	err = ltx_parser_process_file(root, to);
 	if (err != NO_ERROR)
 		fprintf(stderr, "IO error for %s\n", to);
 
@@ -165,7 +164,7 @@ void ltx_reader_default_on_include_directive(LTXReader *root, char path[]) {
 	root->cur_line = sline;
 }
 
-void ltx_reader_default_process_line(LTXReader *root, char *line) {
+void ltx_parser_default_process_line(LTXParser *root, char *line) {
 	size_t max_group = 5;  // Based on regex pattern @ beginning of the file
 	regmatch_t pmatch[max_group];
 
@@ -202,19 +201,19 @@ void ltx_reader_default_process_line(LTXReader *root, char *line) {
 	fprintf(stderr, "WARN: (%s:%lu) A non null line was not processed (%s)\n", root->cur_file_path, root->cur_line, line);
 }
 
-LTXReader *ltx_create_reader() {
-	LTXReader *e = malloc(sizeof(LTXReader));
+LTXParser *ltx_create_parser() {
+	LTXParser *e = malloc(sizeof(LTXParser));
 
-	e->on_new_key = ltx_reader_default_on_new_key;
-	e->on_new_line = ltx_reader_default_process_line;
-	e->on_new_section = ltx_reader_default_on_new_section;
-	e->on_override_section = ltx_reader_default_on_override_section;
-	e->on_include_directive = ltx_reader_default_on_include_directive;
+	e->on_new_key = ltx_parser_default_on_new_key;
+	e->on_new_line = ltx_parser_default_process_line;
+	e->on_new_section = ltx_parser_default_on_new_section;
+	e->on_override_section = ltx_parser_default_on_override_section;
+	e->on_include_directive = ltx_parser_default_on_include_directive;
 
 	return e;
 }
 
-void _ltx_reader_process_buffer(LTXReader *root, char *buffer, size_t buff_size) {
+void _ltx_parser_process_buffer(LTXParser *root, char *buffer, size_t buff_size) {
 	char *cur = buffer;
 	char *end = buffer + buff_size;
 	char *line = buffer;
@@ -243,7 +242,7 @@ void _ltx_reader_process_buffer(LTXReader *root, char *buffer, size_t buff_size)
 	}
 }
 
-LTX_RETURN_CODE ltx_reader_process_file(LTXReader *reader, const char filename[]) {
+LTX_RETURN_CODE ltx_parser_process_file(LTXParser *reader, const char filename[]) {
 	char *buffer;
 	FILE *file = fopen(filename, "r");
 
@@ -251,9 +250,9 @@ LTX_RETURN_CODE ltx_reader_process_file(LTXReader *reader, const char filename[]
 		return FILE_READ_ERROR;
 	}
 
-	buffer = malloc(ltx_reader_buffer_size);
+	buffer = malloc(ltx_parser_buffer_size);
 
-	fread(buffer, ltx_reader_buffer_size-1, 1, file);
+	fread(buffer, ltx_parser_buffer_size-1, 1, file);
 	buffer[ftell(file)] = 0;
 
 	if(feof(file) == 0) {
@@ -266,21 +265,21 @@ LTX_RETURN_CODE ltx_reader_process_file(LTXReader *reader, const char filename[]
 	reader->cur_file_path = strdup(filename);
 	reader->cur_line = 1;
 	// Processing loop
-	_ltx_reader_process_buffer(reader, buffer, ltx_reader_buffer_size);
+	_ltx_parser_process_buffer(reader, buffer, ltx_parser_buffer_size);
 
 	free(buffer);
 	return NO_ERROR;
 }
 
 // Entrypoint
-LTX_RETURN_CODE ltx_reader_parse_file(LTX *ltx, const char filename[]) {
-	LTXReader *reader;
+LTX_RETURN_CODE ltx_parser_parse_file(LTX *ltx, const char filename[]) {
+	LTXParser *reader;
 	LTX_RETURN_CODE err;
 
-	reader = ltx_create_reader();
+	reader = ltx_create_parser();
 	reader->ltx = ltx;
 
-	err = ltx_reader_process_file(reader, filename);
+	err = ltx_parser_process_file(reader, filename);
 
 	free(reader);
 	return err;
