@@ -311,6 +311,7 @@ LTX_RETURN_CODE ltx_parser_process_file(LTXParser *reader, const char filename[]
 	_ltx_parser_process_buffer(reader, buffer, ltx_parser_buffer_size);
 
 	free(buffer);
+	free(reader->cur_file_path);
 	return NO_ERROR;
 }
 
