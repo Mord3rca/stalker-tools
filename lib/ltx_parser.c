@@ -1,6 +1,8 @@
+#include <glob.h>
 #include <libgen.h>
 #include <limits.h>
 #include <regex.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,6 +50,7 @@ struct _LTXParser_s {
 	void (*on_new_line)(LTXParser*, char[]);
 	void (*on_new_key)(LTXParser*, char[], char[]);
 	void (*on_include_directive)(LTXParser*, char[]);
+	void (*on_glob_include_directive)(LTXParser*, char[]);
 	void (*on_new_section)(LTXParser*, char[], char[]);
 	void (*on_override_section)(LTXParser*, char[], char[]);
 };
@@ -67,6 +70,7 @@ void _to_unix_path(char path[]) {
 	}
 }
 
+// TODO: Bad naming. Not really a relative resolve
 char *_relative_to(const char *path, const char *file) {
 	char *r = calloc(sizeof(char), PATH_MAX);
 	char *p = strdup(path);
@@ -164,6 +168,41 @@ void ltx_parser_default_on_include_directive(LTXParser *root, char path[]) {
 	root->cur_line = sline;
 }
 
+void ltx_parser_default_on_glob_include_directive(LTXParser *root, char path[]) {
+	int i;
+	glob_t gl;
+	char *to = _relative_to(root->cur_file_path, path);
+	char *dir = strdup(root->cur_file_path);
+
+	dirname(dir);
+
+	// Not the pretiest but just "works"
+	if (glob(to, GLOB_PERIOD, NULL, &gl) != 0) {
+		fprintf(stderr, "ERR: Globbing error on %s\n", to);
+		free(to);
+		return;
+	}
+
+	for(i=0; gl.gl_pathv[i]; i++) {
+		root->on_include_directive(root, gl.gl_pathv[i] + strlen(dir) + 1);
+	}
+
+	free(to);
+	free(dir);
+	globfree(&gl);
+}
+
+bool _is_globbing(const char path[]) {
+	const char *start = path;
+	const char *end = path + strlen(path);
+
+	// start from the end since most of glob is there.
+	while(end > start)
+		if( *(--end) == '*')
+			return true;
+	return false;
+}
+
 void ltx_parser_default_process_line(LTXParser *root, char *line) {
 	size_t max_group = 5;  // Based on regex pattern @ beginning of the file
 	regmatch_t pmatch[max_group];
@@ -194,7 +233,10 @@ void ltx_parser_default_process_line(LTXParser *root, char *line) {
 
 	if (regexec(&ltx_include_regex, line, max_group, pmatch, 0) == 0) {
 		line[pmatch[1].rm_eo] = 0;
-		root->on_include_directive(root, line + pmatch[1].rm_so);
+		if (_is_globbing(line + pmatch[1].rm_so))
+			root->on_glob_include_directive(root, line + pmatch[1].rm_so);
+		else
+			root->on_include_directive(root, line + pmatch[1].rm_so);
 		return;
 	}
 
@@ -209,6 +251,7 @@ LTXParser *ltx_create_parser() {
 	e->on_new_section = ltx_parser_default_on_new_section;
 	e->on_override_section = ltx_parser_default_on_override_section;
 	e->on_include_directive = ltx_parser_default_on_include_directive;
+	e->on_glob_include_directive = ltx_parser_default_on_glob_include_directive;
 
 	return e;
 }
