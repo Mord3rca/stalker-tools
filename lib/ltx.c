@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "ltx.h"
 #include "ltx_parser.h"
@@ -116,7 +117,7 @@ LTXKey *ltx_section_get_key(LTXSection *sec, const char name[]) {
 	LTXKey **end = sec->keys + sec->keys_size;
 
 	for(;cur < end; cur++) {
-		if(strcmp((*cur)->name, name) == 0)
+		if(strcasecmp((*cur)->name, name) == 0)
 			return *cur;
 	}
 
@@ -221,7 +222,7 @@ LTXSection *ltx_find_section(LTX *root, const char name[]) {
 
 	for(int i = 0; i < root->sections_size; i++) {
 		cur = root->sections[i];
-		if (strcmp(cur->name, name) == 0)
+		if (strcasecmp(cur->name, name) == 0)
 			return cur;
 	}
 	return NULL;
