@@ -1,9 +1,9 @@
 #include <stdio.h>
 //#include <stdlib.h>
 
-#include "ltx.h"
+#include "dltx.h"
 
-void print_all_key(LTXSection s, FILE *out) {
+void print_all_key(DLTXSection s, FILE *out) {
 	char *v;
 
 	for(int i = 0; i < s.keys_size; i++) {
@@ -14,7 +14,7 @@ void print_all_key(LTXSection s, FILE *out) {
 	}
 }
 
-void write_section(LTXSection s, FILE *out) {
+void write_section(DLTXSection s, FILE *out) {
 	if (out == NULL)
 		out = stdout;
 
@@ -24,29 +24,29 @@ void write_section(LTXSection s, FILE *out) {
 }
 
 int main(int argc, char *argv[]) {
-	LTX *ini;
-	LTX_RETURN_CODE err;
+	DLTX *ini;
+	DLTX_RETURN_CODE err;
 
 	if (argc < 2) {
-		puts("usage: ltx-reader <path/to/file.ltx>");
+		puts("usage: dltx-reader <path/to/file.dltx>");
 		return -1;
 	}
 
-	if (ltx_init() != NO_ERROR) {
+	if (dltx_init() != NO_ERROR) {
 		puts("Failed to init");
 		return -1;
 	}
 
-	ini = ltx_create_from_file(argv[1], &err);
+	ini = dltx_create_from_file(argv[1], &err);
 	if(err != NO_ERROR) {
-		puts(ltx_return_code_to_str(err));
+		puts(dltx_return_code_to_str(err));
 		return -err;
 	}
 
 	for(int i = 0; i < ini->sections_size; i++)
 		write_section(*ini->sections[i], NULL);
 
-	free_ltx(ini);
-	ltx_cleanup();
+	free_dltx(ini);
+	dltx_cleanup();
 	return 0;
 }

@@ -1,0 +1,75 @@
+#ifndef _DLTX_HEADER
+#define _DLTX_HEADER
+
+typedef enum {
+	NO_ERROR = 0,
+	INIT_ERROR = 1,
+	FILE_READ_ERROR,
+	FILE_TOO_BIG,
+} DLTX_RETURN_CODE;
+
+const char *dltx_return_code_to_str(DLTX_RETURN_CODE);
+
+DLTX_RETURN_CODE dltx_init(void);
+void dltx_cleanup(void);
+
+typedef struct {
+	char *name;
+	char *value;
+} DLTXKey;
+
+typedef struct _DLTXSection_s DLTXSection;
+struct _DLTXSection_s {
+	char *name;
+
+	// A null terminated array since inheritance are limited
+	DLTXSection **inheritance;
+
+	size_t keys_size;
+	size_t keys_max_size;
+	DLTXKey **keys;
+};
+
+typedef struct {
+	size_t sections_size;
+	size_t sections_max_size;
+	DLTXSection **sections;
+} DLTX;
+
+/*
+ * DLTXKEY methods
+ */
+DLTXKey *dltx_create_key(const char[], const char[]);
+void free_dltx_key(DLTXKey*);
+
+DLTXKey *dltx_key_copy(DLTXKey*);
+
+void dltx_key_set_value(DLTXKey*, const char[]);
+
+/*
+ * DLTXSECTION methods
+ */
+
+DLTXSection *dltx_create_section(const char[]);
+void free_dltx_section(DLTXSection*);
+
+DLTXKey *dltx_section_get_key(DLTXSection*, const char[]);
+DLTX_RETURN_CODE dltx_section_set_key(DLTXSection*, const char[], const char[]);
+
+DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection*, const DLTXSection*);
+
+/*
+ * DLTX methods
+ */
+
+DLTX *dltx_create(void);
+void free_dltx(DLTX*);
+
+DLTX *dltx_create_from_file(const char[], DLTX_RETURN_CODE*);
+DLTX_RETURN_CODE dltx_read_file(DLTX*, const char[]);
+DLTX_RETURN_CODE dltx_read_buffer(DLTX*, char[], size_t);
+
+DLTXSection *dltx_find_section(DLTX*, const char[]);
+DLTXSection *dltx_create_new_section(DLTX*, const char[]);
+
+#endif //_DLTX_HEADER

@@ -2,9 +2,9 @@
 
 A set of tools used for S.T.A.L.K.E.R.'s gamefile manipulation
 
-## ltx-reader
+## dltx-reader
 
-Parse a S.T.A.L.K.E.R. LTX file and spit it out on stdout a ConfigParser.
+Parse a S.T.A.L.K.E.R. DLTX file and spit it out on stdout a ConfigParser.
 
 The result can be parsed by Python with:
 
