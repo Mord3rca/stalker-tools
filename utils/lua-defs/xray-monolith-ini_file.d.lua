@@ -21,7 +21,7 @@ function ini_file:w_bool(section, key, value, comment) end
 ---Write a color type in section.key
 ---@param section string
 ---@param key string
----@param value color
+---@param value number u32
 ---@param comment? string
 function ini_file:w_color(section, key, value, comment) end
 
@@ -35,7 +35,7 @@ function ini_file:w_float(section, key, value, comment) end
 ---Write a fcolor type in section.key
 ---@param section string
 ---@param key string
----@param value vector
+---@param value fcolor
 ---@param comment? string
 function ini_file:w_fcolor(section, key, value, comment) end
 
