@@ -18,3 +18,31 @@ ini.read('/path/to/file')
 ### Limitation
 
 For now, case sensitivity is an issue and depend of your filesystem ...
+
+
+## TODO
+
+Here a list of shit to do for this is usefull:
+
+* lib: DLTX
+  * [ ] Override at the end of inclusions
+  * [ ] Support for SafeOverride (create if not exist)
+  * [ ] Support for section delete
+  * [ ] Support for key without value (= may not be present)
+  * [ ] Better error report
+  * [ ] Trace support
+
+* utils: Modding LUA definition file
+  * [ ] Create a LUA LS Def. file for XRay Monolith LUA Engine
+  * [ ] Document it ... Cauz' reading engine's code to create a mod was annoying.
+
+* exec: STALKER like DLTX Loader
+  * [ ] Script to prepare FS for parsing (Decompress XDB, GAMMA standalone, ...)
+  * [ ] Support of mod_* files
+
+* exec: DLTX Linter
+  * [ ] Why not ? Can be done by moving DLTXParser to the public API and tweeking it a bit.
+
+* lib: Gamefiles
+  * [ ] Parse gamefile structure (chunk type etc)
+  * [ ] Read them all (xdb, omf, ...)
