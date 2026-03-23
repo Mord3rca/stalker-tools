@@ -210,7 +210,7 @@ function ini_file:r_u32(section, key) end
 ---@param section string
 ---@param key string
 ---@return number
-function ini_file:(section, key) end
+function ini_file:r_s32(section, key) end
 
 ---Read section.key as number
 ---@param section string
@@ -241,7 +241,7 @@ function ini_file:get_filename() end
 ---Print DLTX override info
 ---@param section string
 ---@param key string
-function ini_file:dltx_print(section, line) end
+function ini_file:dltx_print(section, key) end
 
 ---Get filename of section.key
 ---@param section string
