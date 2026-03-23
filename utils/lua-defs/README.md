@@ -52,7 +52,7 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/BottleItem_script.cpp
 * [ ] src/xrGame/CarScript.cpp
 * [ ] src/xrGame/client_spawn_manager_script.cpp
-* [ ] src/xrGame/console_registrator_script.cpp
+* [x] src/xrGame/console_registrator_script.cpp
 * [ ] src/xrGame/cover_point_script.cpp
 * [ ] src/xrGame/CustomOutfit_script.cpp
 * [ ] src/xrGame/CustomZone_script.cpp
