@@ -153,8 +153,8 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/ui/UIOptionsManagerScript.cpp
 * [ ] src/xrGame/ui/UIProgressBar_script.cpp
 * [ ] src/xrGame/ui/UIPropertiesBox_script.cpp
-* [ ] src/xrGame/ui/uiscriptwnd_script2.cpp
-* [ ] src/xrGame/ui/UIScriptWnd_script.cpp
+* [x] src/xrGame/ui/uiscriptwnd_script2.cpp
+* [x] src/xrGame/ui/UIScriptWnd_script.cpp
 * [ ] src/xrGame/ui/UIStatic_script.cpp
 * [ ] src/xrGame/ui/UITabControl_script.cpp
 * [ ] src/xrGame/ui/UIWindow_script.cpp
