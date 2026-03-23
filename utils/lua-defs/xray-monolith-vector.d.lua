@@ -453,7 +453,7 @@ function vector4:add(x, y, z, w) end
 function vector4:add(v) end
 
 ---Add to vector4
----@param vs number
+---@param s number
 ---@return vector4 self
 function vector4:add(s) end
 
