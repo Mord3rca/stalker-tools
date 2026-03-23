@@ -166,9 +166,8 @@ function ini_file:line_exist(section, key) end
 ---Read section.key as clsid
 ---@param section string
 ---@param key string
----@return clsid
 function ini_file:r_clsid(section, key) end
--- TODO: Define CLSID type (see src/xrCore/clsid.h)
+-- TODO: Add return type once CLSID type is defined (see src/xrCore/clsid.h)
 
 ---Read section.key as boolean
 ---@param section string
@@ -179,7 +178,7 @@ function ini_file:r_bool(section, key) end
 ---Read section.key and return the ID matching the pair {name, id} defined in token_list or 0
 ---@param section string
 ---@param key string
----@param token_list xr_token
+---@param token_list {name: string, id: number}[]
 ---@return number
 function ini_file:r_token(section, key, token_list) end
 
@@ -251,8 +250,9 @@ function ini_file:dltx_get_filename_of_line(section, key) end
 
 ---Return an table containing an object for each key ({name, value, filename, data})
 ---@param section string
----@return object
+---@return {name: string, value: string, filename: string, data:string}
 function ini_file:dltx_get_section(section) end
+-- TODO: Confirm return type
 
 ---Return true if file associated to section.key begin with "mod_"
 ---@param section string
