@@ -187,7 +187,7 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrServerEntities/script_fcolor_script.cpp
 * [ ] src/xrServerEntities/script_flags_script.cpp
 * [ ] src/xrServerEntities/script_fmatrix_script.cpp
-* [ ] src/xrServerEntities/script_fvector_script.cpp
+* [x] src/xrServerEntities/script_fvector_script.cpp
 * [x] src/xrServerEntities/script_ini_file_script.cpp
 * [ ] src/xrServerEntities/script_net_packet_script.cpp
 * [ ] src/xrServerEntities/script_reader_script.cpp
