@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <glob.h>
 #include <libgen.h>
 #include <limits.h>
@@ -12,13 +13,39 @@
 const size_t dltx_parser_buffer_size = 256*1024;
 const size_t dltx_parser_max_inheritence = 8;
 
-const char dltx_key_regex_pattern[] = "[[:blank:]]*([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
+const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
 const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
-const char dltx_section_regex_pattern[] = "[[:blank:]]*(!?)\\[([[:graph:]]*)\\](:([[:graph:]]*))?";
+const char dltx_section_regex_pattern[] = "(!?)\\[([[:graph:]]*)\\](:([[:graph:]]*))?";
 
 regex_t dltx_key_regex;
 regex_t dltx_include_regex;
 regex_t dltx_section_regex;
+
+char* _rstrip(char *s) {
+	char *cur, *end;
+	size_t l = strlen(s);
+
+	for(cur = s, end = s + l; cur < end && isspace(*cur); *(cur++) = 0);
+
+	return cur != end ? cur : NULL;
+}
+
+char *_lstrip(char *s) {
+	char *cur, *end;
+	size_t l = strlen(s);
+
+	for(cur = s + l, end = s; cur > end && isspace(*cur); *(cur--) = 0);
+
+	return cur != end ? s : NULL;
+}
+
+char *_strip(char *s) {
+	s = _rstrip(s);
+	if (s)
+		_lstrip(s);
+
+	return s;
+}
 
 DLTX_RETURN_CODE dltx_parser_init(void) {
 	if (regcomp(&dltx_key_regex, dltx_key_regex_pattern, REG_EXTENDED) != 0)
@@ -208,6 +235,11 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 	regmatch_t pmatch[max_group];
 
 	if(*line == '\0')
+		return;
+
+	// Avoid blank lines
+	line = _strip(line);
+	if (line == NULL)
 		return;
 
 	if (regexec(&dltx_key_regex, line, max_group, pmatch, 0) == 0) {
