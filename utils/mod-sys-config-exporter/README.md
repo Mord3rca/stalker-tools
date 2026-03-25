@@ -5,7 +5,7 @@ Just a small mod to dump *system.ltx* configuration
 
 ### Installation
 
-Copy **config-exporter.lua** in **<path/to/Anomaly>/gamedata/script/config-exporter.script**
+Copy **config-exporter.script** in **<path/to/Anomaly>/gamedata/scripts/**
 
 
 ### Usage
