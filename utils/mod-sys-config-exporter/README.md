@@ -2,11 +2,14 @@
 
 Just a small mod to dump *system.ltx* configuration
 
+/!\ USAGE WARNING: Seems to cause corruption of GAMMA folder when use with ModOrganizer.
+Maybe it's only my Linux install, my seteup or something really weird with ModOrganizer.
+
+Don't plan to investigate further. You are warned.
 
 ### Installation
 
 Copy **config-exporter.script** in **<path/to/Anomaly>/gamedata/scripts/**
-
 
 ### Usage
 
