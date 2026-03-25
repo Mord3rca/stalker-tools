@@ -1,11 +1,5 @@
 local log_name = "[DLTX Exporter] "
 
-function debug_cmd_list.cmd.export_system_config(_, __, cout)
-    cout:SendOutput(log_name .. "Exporting configuration")
-    system_ini():save_as("outfile.ini")
-    cout:SendOutput(log_name .. "Export finished")
-end
-
 
 function _adding_motion_length(section)
     local anim_key_name = {
@@ -51,16 +45,37 @@ function _adding_motion_length(section)
     return false  -- Continue iteration
 end
 
-function debug_cmd_list.cmd.export_system_config_extended(_, __, cout)
-    cout:SendOutput(log_name .. "Adding add. info in system configuration")
-    system_ini():set_readonly(false)
-    system_ini():section_for_each(_adding_motion_length)
-    system_ini():set_readonly(true)
-
-    -- Use previous func to dump system config
-    debug_cmd_list.cmd.export_system_config(_, __, cout)
+local function export_system_config(_, __, cout)
+        cout:SendOutput(log_name .. "Exporting configuration")
+        system_ini():save_as(getFS():update_path("$logs$", string.format("outfile-%d.ini", os.time(os.date("!*t")))))
+        cout:SendOutput(log_name .. "Export finished")
 end
 
--- Register dumping functions in DBG mode menu
-ui_debug_launcher.inject("action", {name = "Export System Config", cmd = "export_system_config", hide_ui = 0})
-ui_debug_launcher.inject("action", {name = "Export Sys. Config Ext.", cmd = "export_system_config_extended", hide_ui = 0})
+local function export_system_config_extended(_, __, cout)
+        cout:SendOutput(log_name .. "Adding add. info in system configuration")
+        system_ini():set_readonly(false)
+        system_ini():section_for_each(_adding_motion_length)
+        system_ini():set_readonly(true)
+
+        -- Use previous func to dump system config
+        export_system_config(_, __, cout)
+end
+
+local function on_game_load()
+    local cmd = debug_cmd_list.command_get_list()
+
+    -- Register dumping functions in DBG mode menu
+    cmd.export_system_config = export_system_config
+    ui_debug_launcher.inject("action", {name = "Export System Config", cmd = "export_system_config", hide_ui = 0})
+
+    cmd.export_system_config_extended = export_system_config_extended
+    ui_debug_launcher.inject("action", {name = "Export Sys. Config Ext.", cmd = "export_system_config_extended", hide_ui = 0})
+end
+
+function on_game_start()
+    if not DEV_DEBUG then
+        return
+    end
+
+    RegisterScriptCallback("on_game_load", on_game_load)
+end
