@@ -28,7 +28,7 @@ Here a list of shit to do for this is usefull:
   * [ ] Override at the end of inclusions
   * [ ] Support for SafeOverride (create if not exist)
   * [ ] Support for section delete
-  * [ ] Support for key without value (= may not be present)
+  * [x] Support for key without value (= may not be present)
   * [ ] Better error report
   * [ ] Trace support
 
