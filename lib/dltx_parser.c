@@ -242,12 +242,20 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 	if (line == NULL)
 		return;
 
+	// Start with a # so probably a header
+	if (line[0] == '#' && regexec(&dltx_include_regex, line, max_group, pmatch, 0) == 0) {
+		line[pmatch[1].rm_eo] = 0;
+		if (_is_globbing(line + pmatch[1].rm_so))
+			root->on_glob_include_directive(root, line + pmatch[1].rm_so);
+		else
+			root->on_include_directive(root, line + pmatch[1].rm_so);
+		return;
+	}
+
+	// Key with assignation
 	if (regexec(&dltx_key_regex, line, max_group, pmatch, 0) == 0) {
 		line[pmatch[1].rm_eo] = 0;
 		line[pmatch[2].rm_eo] = 0;
-		// Remove trailing spaces / tabs of value
-		for(char *c = line + pmatch[2].rm_eo -1; *c == ' ' || *c == '\t'; c--)
-			*c = 0;
 		root->on_new_key(root, line + pmatch[1].rm_so, line + pmatch[2].rm_so);
 		return;
 	}
@@ -263,16 +271,8 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 		return;
 	}
 
-	if (regexec(&dltx_include_regex, line, max_group, pmatch, 0) == 0) {
-		line[pmatch[1].rm_eo] = 0;
-		if (_is_globbing(line + pmatch[1].rm_so))
-			root->on_glob_include_directive(root, line + pmatch[1].rm_so);
-		else
-			root->on_include_directive(root, line + pmatch[1].rm_so);
-		return;
-	}
-
-	fprintf(stderr, "WARN: (%s:%lu) A non null line was not processed (%s)\n", root->cur_file_path, root->cur_line, line);
+	// Well, if it's nothing. It should be a key
+	root->on_new_key(root, line, NULL);
 }
 
 DLTXParser *dltx_create_parser() {
