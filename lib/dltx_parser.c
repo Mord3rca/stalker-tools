@@ -231,6 +231,7 @@ bool _is_globbing(const char path[]) {
 }
 
 void dltx_parser_default_process_line(DLTXParser *root, char *line) {
+	char *inheritance;
 	size_t max_group = 5;  // Based on regex pattern @ beginning of the file
 	regmatch_t pmatch[max_group];
 
@@ -261,12 +262,19 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 	}
 
 	if (regexec(&dltx_section_regex, line, max_group, pmatch, 0) == 0) {
+		inheritance = NULL;
 		line[pmatch[2].rm_eo] = 0;
-		line[pmatch[4].rm_eo] = 0;
+
+		// Check if inheritance matched
+		if (pmatch[4].rm_eo > -1) {
+			inheritance = line + pmatch[4].rm_so;
+			line[pmatch[4].rm_eo] = 0;
+		}
+
 		if (pmatch[1].rm_eo == 0)
-			root->on_new_section(root, line + pmatch[2].rm_so, line + pmatch[4].rm_so);
+			root->on_new_section(root, line + pmatch[2].rm_so, inheritance);
 		else
-			root->on_override_section(root, line + pmatch[2].rm_so, line + pmatch[4].rm_so);
+			root->on_override_section(root, line + pmatch[2].rm_so, inheritance);
 
 		return;
 	}
