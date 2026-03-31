@@ -7,4 +7,4 @@
 set -xeu
 
 mkdir -p out/
-gcc -Wall -g -I include/ -o out/dltx-reader lib/dltx.c lib/dltx_parser.c src/dltx-reader.c
+gcc -Wall -g -I include/ -o out/dltx-reader lib/dltx.c lib/dltx_parser.c lib/dynarray.c src/dltx-reader.c
