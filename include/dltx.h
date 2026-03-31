@@ -1,6 +1,8 @@
 #ifndef _DLTX_HEADER
 #define _DLTX_HEADER
 
+#include "dynarray.h"
+
 typedef enum {
 	NO_ERROR = 0,
 	INIT_ERROR = 1,
@@ -25,15 +27,11 @@ struct _DLTXSection_s {
 	// A null terminated array since inheritance are limited
 	DLTXSection **inheritance;
 
-	size_t keys_size;
-	size_t keys_max_size;
-	DLTXKey **keys;
+	struct dynarray *keys;
 };
 
 typedef struct {
-	size_t sections_size;
-	size_t sections_max_size;
-	DLTXSection **sections;
+	struct dynarray *sections;
 } DLTX;
 
 /*

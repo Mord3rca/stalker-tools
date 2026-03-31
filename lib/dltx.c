@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -90,9 +91,7 @@ DLTXSection *dltx_create_section(const char name[]) {
 
 	s->name = strdup(name);
 
-	s->keys = calloc(sizeof(DLTXKey), dltx_default_key_array_size);
-	s->keys_size = 0;
-	s->keys_max_size = dltx_default_key_array_size;
+	s->keys = dynarray_create(dltx_default_key_array_size);
 
 	// Used by DLTXReader
 	s->inheritance = NULL;
@@ -105,16 +104,13 @@ void free_dltx_section(DLTXSection *s) {
 	if (s->inheritance != NULL)
 		free(s->inheritance);
 
-	while(s->keys_size > 0)
-		free_dltx_key(s->keys[--(s->keys_size)]);
-
-	free(s->keys);
+	free_dynarray(s->keys, (void (*)(void*))&free_dltx_key);
 	free(s);
 }
 
 DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[]) {
-	DLTXKey **cur = sec->keys;
-	DLTXKey **end = sec->keys + sec->keys_size;
+	DLTXKey **cur = (DLTXKey**)sec->keys->arr;
+	DLTXKey **end = (DLTXKey**)sec->keys->arr + sec->keys->size;
 
 	for(;cur < end; cur++) {
 		if(strcasecmp((*cur)->name, name) == 0)
@@ -126,18 +122,11 @@ DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[]) {
 
 DLTX_RETURN_CODE dltx_section_set_key(DLTXSection *sec, const char key[], const char value[]) {
 	DLTXKey *k;
-	size_t nsize;
-
-	if (sec->keys_size >= sec->keys_max_size) {
-		nsize = sec->keys_max_size + 128;
-		sec->keys = reallocarray(sec->keys, sec->keys_max_size, nsize);
-		sec->keys_max_size = nsize;
-	}
 
 	k = dltx_section_get_key(sec, key);
 	if (k == NULL) {
 		k = dltx_create_key(key, value);
-		sec->keys[sec->keys_size++] = k;
+		dynarray_insert(sec->keys, k);
 	} else {
 		dltx_key_set_value(k, value);
 	}
@@ -154,9 +143,9 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 	if (src == NULL)
 		return NO_ERROR; // TODO: Null args.
 
-	arr_end = src->keys + src->keys_size;
+	arr_end = (DLTXKey**)src->keys->arr + src->keys->size;
 
-	for(arr_cur = src->keys; arr_cur < arr_end; arr_cur++) {
+	for(arr_cur = (DLTXKey**)src->keys->arr; arr_cur < arr_end; arr_cur++) {
 		cur = *arr_cur;
 		if (cur == NULL)
 			break;
@@ -184,17 +173,13 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 DLTX *dltx_create(void) {
 	DLTX *dltx = malloc(sizeof(DLTX));
 
-	dltx->sections = calloc(sizeof(DLTXSection*), dltx_default_section_array_size);
-	dltx->sections_size = 0;
-	dltx->sections_max_size = dltx_default_section_array_size;
+	dltx->sections = dynarray_create(dltx_default_section_array_size);
 
 	return dltx;
 }
 
 void free_dltx(DLTX *l) {
-	while(l->sections_size > 0)
-		free_dltx_section(l->sections[--(l->sections_size)]);
-	free(l->sections);
+	free_dynarray(l->sections, (void (*)(void*))&free_dltx_section);
 	free(l);
 }
 
@@ -224,8 +209,8 @@ DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
 	if (!root->sections)
 		return NULL;
 
-	for(int i = 0; i < root->sections_size; i++) {
-		cur = root->sections[i];
+	for(int i = 0; i < root->sections->size; i++) {
+		cur = root->sections->arr[i];
 		if (strcasecmp(cur->name, name) == 0)
 			return cur;
 	}
@@ -233,17 +218,9 @@ DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
 }
 
 DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
-	size_t nsize;
-	DLTXSection *s;
+	DLTXSection *s = dltx_create_section(name);
+	dynarray_insert(root->sections, s);
 
-	if (root->sections_size >= root->sections_max_size) {
-		nsize = root->sections_max_size + 128;
-		root->sections = reallocarray(root->sections, root->sections_max_size, nsize);
-		root->sections_max_size = nsize;
-	}
-
-	s = dltx_create_section(name);
-	root->sections[(root->sections_size++)] = s;
 	return s;
 }
 
