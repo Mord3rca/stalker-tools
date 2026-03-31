@@ -1,0 +1,29 @@
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    name: 'Building, basic UTest and memcheck tests'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install deps
+        run: sudo apt install valgrind
+      - name: Building
+        run: ./build.sh
+      - name: Test simple.ltx
+        run: .github/scripts/basic-utest.sh simple.ltx 299566254b1f130dee3e385c193db85d
+      - name: Test dirty.ltx
+        run: .github/scripts/basic-utest.sh dirty.ltx 1385323664c19f37f557045aff5ebf90
+      - name: Test case.ltx
+        run: .github/scripts/basic-utest.sh case.ltx fd2b12e5feab3ae71b52c1ff0d4a11a0
+      - name: Test inheritance.ltx
+        run: .github/scripts/basic-utest.sh inheritance.ltx aa1983acc36bcf804812618a2074aaea
+      - name: Test override.ltx
+        run: .github/scripts/basic-utest.sh override.ltx 885ebd029102b01ad15fd3fea671e61d
+      - name: Test glob.ltx
+        run: .github/scripts/basic-utest.sh glob.ltx d93930a3f1185173639710ba7a17cf1c
