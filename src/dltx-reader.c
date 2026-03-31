@@ -4,13 +4,11 @@
 #include "dltx.h"
 
 void print_all_key(DLTXSection s, FILE *out) {
-	char *v;
+	DLTXKey *k;
 
-	for(int i = 0; i < s.keys_size; i++) {
-		v = s.keys[i]->value;
-		if (v == NULL)
-			v = "";
-		fprintf(out, "%s = %s\r\n", s.keys[i]->name, v);
+	for(int i = 0; i < s.keys->size; i++) {
+		k = (DLTXKey*)s.keys->arr[i];
+		fprintf(out, "%s = %s\r\n", k->name, k->value ? k->value : "");
 	}
 }
 
@@ -43,8 +41,8 @@ int main(int argc, char *argv[]) {
 		return -err;
 	}
 
-	for(int i = 0; i < ini->sections_size; i++)
-		write_section(*ini->sections[i], NULL);
+	for(int i = 0; i < ini->sections->size; i++)
+		write_section(*((DLTXSection*)ini->sections->arr[i]), NULL);
 
 	free_dltx(ini);
 	dltx_cleanup();
