@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,6 +91,8 @@ DLTXSection *dltx_create_section(const char name[]) {
 	DLTXSection *s = malloc(sizeof(DLTXSection));
 
 	s->name = strdup(name);
+	for(char *i = s->name; *i != 0; i++)
+		*i = tolower(*i);
 
 	s->keys = dynarray_create(dltx_default_key_array_size);
 
@@ -113,7 +116,7 @@ DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[]) {
 	DLTXKey **end = (DLTXKey**)sec->keys->arr + sec->keys->size;
 
 	for(;cur < end; cur++) {
-		if(strcasecmp((*cur)->name, name) == 0)
+		if(strcmp((*cur)->name, name) == 0)
 			return *cur;
 	}
 
