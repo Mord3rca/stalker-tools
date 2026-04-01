@@ -9,7 +9,7 @@ Don't plan to investigate further. You are warned.
 
 ### Installation
 
-Copy **config-exporter.script** in **<path/to/Anomaly>/gamedata/scripts/**
+Copy **config_exporter.script** in **<path/to/Anomaly>/gamedata/scripts/**
 
 ### Usage
 
@@ -17,7 +17,7 @@ Run Anomaly with the `-dbg` command argument and start a game (new game or saved
 
 
 Once the map loaded, press F7, go to the Action section and run "Export System Config",
-this should create a file (*outfile.ini*) in the current dir with all the section / keys created by **system.ltx**
+this should create a file (*outfile-<unix-timestamp>.ini*) in the **appdata\logs** dir with all the section / keys created by **system.ltx**
 
 *Export Sys. Config Ext.* action can also be used to dump extra keys:
 
