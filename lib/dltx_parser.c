@@ -16,7 +16,7 @@ const size_t dltx_parser_max_inheritence = 8;
 
 const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
 const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
-const char dltx_section_regex_pattern[] = "(!?)\\[([[:graph:]]*)\\](:([[:graph:]]*))?";
+const char dltx_section_regex_pattern[] = "([!@]{,2})\\[([[:graph:]]*)\\](:([[:graph:]]*))?";
 
 regex_t dltx_key_regex;
 regex_t dltx_include_regex;
@@ -67,12 +67,34 @@ void dltx_parser_cleanup(void) {
 	regfree(&dltx_section_regex);
 }
 
+typedef enum {
+	OVERRIDE,
+	OVERRIDE_SAFE,
+	OVERRIDE_DELETE,
+
+	OVERRIDE_NONE,
+} OVERRIDE_TYPE;
+
+static OVERRIDE_TYPE _char_to_override_enum(const char modifier[2] /* Assuming min size of 2 */) {
+	switch (modifier[0]) {
+	case '!':
+		return modifier[1] == '!' ? OVERRIDE_DELETE : OVERRIDE;
+		;;
+	case '@':
+		return OVERRIDE_SAFE;
+		;;
+	default:
+		return OVERRIDE_NONE;
+	}
+}
+
 typedef struct _DLTXParser_s DLTXParser;
 struct _DLTXParser_s {
 	DLTX *dltx;
 	DLTXSection *cur_section;
 
 	struct dynarray *overrides;
+	struct dynarray *deletions;
 
 	size_t cur_line;
 	char *cur_file_path;
@@ -83,6 +105,7 @@ struct _DLTXParser_s {
 	void (*on_glob_include_directive)(DLTXParser*, char[]);
 	void (*on_new_section)(DLTXParser*, char[], char[]);
 	void (*on_override_section)(DLTXParser*, char[], char[]);
+	void (*on_deletion_section)(DLTXParser*, char[], char[]);
 };
 
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser*, const char[]);
@@ -186,6 +209,21 @@ void dltx_parser_default_on_override_section(DLTXParser *root, char name[], char
 	root->cur_section = s;
 }
 
+void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char inheritance[]) {
+	DLTXSection *s = _find_section(root->deletions, name);
+
+	if (s) {
+		fprintf(
+			stderr, "WARN (%s:%lu): Section %s was marked for deletion twice",
+			root->cur_file_path, root->cur_line, name
+		);
+		return;
+	}
+
+	s = dltx_create_section(name);
+	dynarray_insert(root->deletions, s);
+}
+
 void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) {
 	if (root->cur_section == NULL) {
 		fprintf(stderr, "cannot insert key into null section\n");
@@ -286,11 +324,16 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 			line[pmatch[4].rm_eo] = 0;
 		}
 
-		if (pmatch[1].rm_eo == 0)
-			root->on_new_section(root, line + pmatch[2].rm_so, inheritance);
-		else
+		switch(_char_to_override_enum(line + pmatch[1].rm_so)) {
+		case OVERRIDE:
 			root->on_override_section(root, line + pmatch[2].rm_so, inheritance);
-
+			break;
+		case OVERRIDE_DELETE:
+			root->on_deletion_section(root, line + pmatch[2].rm_so, inheritance);
+			break;
+		default:
+			root->on_new_section(root, line + pmatch[2].rm_so, inheritance);
+		}
 		return;
 	}
 
@@ -302,11 +345,13 @@ DLTXParser *dltx_create_parser() {
 	DLTXParser *e = malloc(sizeof(DLTXParser));
 
 	e->overrides = dynarray_create(32);
+	e->deletions = dynarray_create(8);
 
 	e->on_new_key = dltx_parser_default_on_new_key;
 	e->on_new_line = dltx_parser_default_process_line;
 	e->on_new_section = dltx_parser_default_on_new_section;
 	e->on_override_section = dltx_parser_default_on_override_section;
+	e->on_deletion_section = dltx_parser_default_on_deletion_section;
 	e->on_include_directive = dltx_parser_default_on_include_directive;
 	e->on_glob_include_directive = dltx_parser_default_on_glob_include_directive;
 
@@ -315,14 +360,48 @@ DLTXParser *dltx_create_parser() {
 
 void free_dltx_parser(DLTXParser *e) {
 	free_dynarray(e->overrides, (void (*)(void*))&free_dltx_section);
+	free_dynarray(e->deletions, (void (*)(void*))&free_dltx_section);
 	free(e);
 }
 
 void _dltx_apply_overrides(DLTXParser *root) {
-	DLTXSection **arr_cur = (DLTXSection**)root->overrides->arr;
-	DLTXSection **arr_end = (DLTXSection**)root->overrides->arr + root->overrides->size;
+	DLTXSection **arr_cur, **arr_end;
 	DLTXSection *cur, *temp;
+	bool not_found_warn;
 
+	// Apply deletions
+	arr_cur = (DLTXSection**)root->deletions->arr;
+	arr_end = (DLTXSection**)root->deletions->arr + root->deletions->size;
+	for (; arr_cur < arr_end; arr_cur++) {
+		cur = *arr_cur;
+		not_found_warn = true;
+		// Remove from base
+		temp = _find_section(root->dltx->sections, cur->name);
+		if (temp) {
+			dynarray_remove(root->dltx->sections, temp);
+			free_dltx_section(temp);
+			not_found_warn = false;
+		}
+
+		// Remove from overrides
+		temp = _find_section(root->overrides, cur->name);
+		if (temp) {
+			dynarray_remove(root->overrides, temp);
+			free_dltx_section(temp);
+			not_found_warn = false;
+		}
+
+		if (not_found_warn) {
+			fprintf(
+				stderr, "WARN: Section %s was marked for deletion but do not exist\n",
+				cur->name
+			);
+		}
+	}
+
+	// Apply classic overrides
+	arr_cur = (DLTXSection**)root->overrides->arr;
+	arr_end = (DLTXSection**)root->overrides->arr + root->overrides->size;
 	for (; arr_cur < arr_end; arr_cur++) {
 		cur = *arr_cur;
 		temp = dltx_find_section(root->dltx, cur->name);

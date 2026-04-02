@@ -27,7 +27,7 @@ Here a list of shit to do for this is usefull:
 * lib: DLTX
   * [x] Override at the end of buffer processing
   * [ ] Support for SafeOverride (create if not exist)
-  * [ ] Support for section delete
+  * [x] Support for section delete
   * [x] Support for key without value (= may not be present)
   * [ ] Better error report
   * [ ] Trace support
