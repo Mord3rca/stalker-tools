@@ -54,8 +54,8 @@ int dynarray_remove(struct dynarray *array, void *obj) {
 		return -1;
 	}
 
-	array->arr[pos] = array->arr[array->size];
 	array->size--;
+	array->arr[pos] = array->arr[array->size];
 
 	return 0;
 }

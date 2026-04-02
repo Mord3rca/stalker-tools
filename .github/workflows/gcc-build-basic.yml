@@ -27,5 +27,7 @@ jobs:
         run: .github/scripts/basic-utest.sh override.ltx 885ebd029102b01ad15fd3fea671e61d
       - name: Test override-first.ltx
         run: .github/scripts/basic-utest.sh override-first.ltx 5b6c3244fa22ee968deda055ca415376
+      - name: Test deletion.ltx
+        run: .github/scripts/basic-utest.sh deletion.ltx 48810c0b253e184c644f52c98afb98de
       - name: Test glob.ltx
         run: .github/scripts/basic-utest.sh glob.ltx d93930a3f1185173639710ba7a17cf1c
