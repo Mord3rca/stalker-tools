@@ -25,5 +25,7 @@ jobs:
         run: .github/scripts/basic-utest.sh inheritance.ltx aa1983acc36bcf804812618a2074aaea
       - name: Test override.ltx
         run: .github/scripts/basic-utest.sh override.ltx 885ebd029102b01ad15fd3fea671e61d
+      - name: Test override-first.ltx
+        run: .github/scripts/basic-utest.sh override-first.ltx 5b6c3244fa22ee968deda055ca415376
       - name: Test glob.ltx
         run: .github/scripts/basic-utest.sh glob.ltx d93930a3f1185173639710ba7a17cf1c
