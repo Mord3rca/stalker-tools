@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "dltx_parser.h"
+#include "dynarray.h"
 
 const size_t dltx_parser_buffer_size = 256*1024;
 const size_t dltx_parser_max_inheritence = 8;
@@ -70,6 +71,8 @@ typedef struct _DLTXParser_s DLTXParser;
 struct _DLTXParser_s {
 	DLTX *dltx;
 	DLTXSection *cur_section;
+
+	struct dynarray *overrides;
 
 	size_t cur_line;
 	char *cur_file_path;
@@ -161,12 +164,24 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 	dltx_parser_resolve_inheritance(root, inheritance);
 }
 
+static DLTXSection *_find_section(struct dynarray *arr, const char name[]) {
+	DLTXSection **cur, **end;
+
+	cur = (DLTXSection**)arr->arr;
+	end = (DLTXSection**)arr->arr + arr->size;
+	for (; cur < end; cur++)
+		if (strcasecmp((*cur)->name, name) == 0)
+			return *cur;
+
+	return NULL;
+}
+
 void dltx_parser_default_on_override_section(DLTXParser *root, char name[], char inheritance[]) {
-	DLTXSection *s = dltx_find_section(root->dltx, name);
+	DLTXSection *s = _find_section(root->overrides, name);
 
 	if (s == NULL) {
-		fprintf(stderr, "ERROR: Section (%s) do not exist and overwrite flag is set\n", name);
-		// Should error out
+		s = dltx_create_section(name);
+		dynarray_insert(root->overrides, s);
 	}
 	root->cur_section = s;
 }
@@ -286,6 +301,8 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 DLTXParser *dltx_create_parser() {
 	DLTXParser *e = malloc(sizeof(DLTXParser));
 
+	e->overrides = dynarray_create(32);
+
 	e->on_new_key = dltx_parser_default_on_new_key;
 	e->on_new_line = dltx_parser_default_process_line;
 	e->on_new_section = dltx_parser_default_on_new_section;
@@ -294,6 +311,27 @@ DLTXParser *dltx_create_parser() {
 	e->on_glob_include_directive = dltx_parser_default_on_glob_include_directive;
 
 	return e;
+}
+
+void free_dltx_parser(DLTXParser *e) {
+	free_dynarray(e->overrides, (void (*)(void*))&free_dltx_section);
+	free(e);
+}
+
+void _dltx_apply_overrides(DLTXParser *root) {
+	DLTXSection **arr_cur = (DLTXSection**)root->overrides->arr;
+	DLTXSection **arr_end = (DLTXSection**)root->overrides->arr + root->overrides->size;
+	DLTXSection *cur, *temp;
+
+	for (; arr_cur < arr_end; arr_cur++) {
+		cur = *arr_cur;
+		temp = dltx_find_section(root->dltx, cur->name);
+		if (temp == NULL) {
+			fprintf(stderr, "ERR: Section (%s) don't exist and cannot be overriden\n", cur->name);
+			return;
+		}
+		dltx_section_update_keys(temp, cur);
+	}
 }
 
 void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
@@ -320,9 +358,11 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 
 		if(*cur == '\0') {
 			root->on_new_line(root, line);
-			return;
+			break;
 		}
 	}
+
+	_dltx_apply_overrides(root);
 }
 
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[]) {
@@ -365,7 +405,7 @@ DLTX_RETURN_CODE dltx_parser_parse_file(DLTX *dltx, const char filename[]) {
 
 	err = dltx_parser_process_file(reader, filename);
 
-	free(reader);
+	free_dltx_parser(reader);
 	return err;
 }
 
@@ -392,6 +432,6 @@ DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buff
 	_dltx_parser_process_buffer(reader, buffer, buffer_size);
 
 	free(reader->cur_file_path);
-	free(reader);
+	free_dltx_parser(reader);
 	return NO_ERROR;
 }

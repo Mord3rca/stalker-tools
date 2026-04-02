@@ -25,7 +25,7 @@ For now, case sensitivity is an issue and depend of your filesystem ...
 Here a list of shit to do for this is usefull:
 
 * lib: DLTX
-  * [ ] Override at the end of inclusions
+  * [x] Override at the end of buffer processing
   * [ ] Support for SafeOverride (create if not exist)
   * [ ] Support for section delete
   * [x] Support for key without value (= may not be present)
