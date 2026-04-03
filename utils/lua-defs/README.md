@@ -48,7 +48,7 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/alife_smart_terrain_task_script.cpp
 * [ ] src/xrGame/antirad_script.cpp
 * [ ] src/xrGame/artefact_script.cpp
-* [ ] src/xrGame/base_client_classes_script.cpp
+* [x] src/xrGame/base_client_classes_script.cpp
 * [ ] src/xrGame/BottleItem_script.cpp
 * [ ] src/xrGame/CarScript.cpp
 * [ ] src/xrGame/client_spawn_manager_script.cpp
