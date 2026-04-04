@@ -189,7 +189,7 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrServerEntities/script_fmatrix_script.cpp
 * [x] src/xrServerEntities/script_fvector_script.cpp
 * [x] src/xrServerEntities/script_ini_file_script.cpp
-* [ ] src/xrServerEntities/script_net_packet_script.cpp
+* [x] src/xrServerEntities/script_net_packet_script.cpp
 * [ ] src/xrServerEntities/script_reader_script.cpp
 * [ ] src/xrServerEntities/script_rtoken_list_script.cpp
 * [ ] src/xrServerEntities/script_token_list_script.cpp
