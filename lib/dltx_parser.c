@@ -11,6 +11,13 @@
 #include "dltx_parser.h"
 #include "dynarray.h"
 
+#define DLTX_PARSER_LOG(file, format, ...) fprintf(file, "DLTX Parser - " format "\n", __VA_ARGS__)
+
+#define DLTX_PARSER_LOG_INFO(parser, format, ...) DLTX_PARSER_LOG(stderr, "INFO (in %s:%lu): " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
+#define DLTX_PARSER_LOG_WARN(parser, format, ...) DLTX_PARSER_LOG(stderr, "WARN (in %s:%lu): " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
+#define DLTX_PARSER_LOG_ERR(parser, format, ...)  DLTX_PARSER_LOG(stderr, "ERR (in %s:%lu):  " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
+#define DLTX_PARSER_LOG_DBG(parser, format, ...)  DLTX_PARSER_LOG(stderr, "DBG (in %s:%lu):  " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
+
 const size_t dltx_parser_buffer_size = 256*1024;
 const size_t dltx_parser_max_inheritence = 8;
 
@@ -156,7 +163,7 @@ void dltx_parser_resolve_inheritance(DLTXParser *root, char inheritance[]) {
 
 	for(i = 0, str = inheritance; ; i++, str = NULL) {
 		if (i >= dltx_parser_max_inheritence) {
-			fprintf(stderr, "TOO MUCH INHERITANCE ABORT\n");
+			DLTX_PARSER_LOG_ERR(root, "TOO MUCH INHERITANCE ABORT");
 			break;
 		}
 		token = strtok_r(str, ",", &saveptr);
@@ -165,7 +172,7 @@ void dltx_parser_resolve_inheritance(DLTXParser *root, char inheritance[]) {
 
 		p = dltx_find_section(root->dltx, token);
 		if (p == NULL) {
-			fprintf(stderr, "Could not found inheritance (%s) block\n", token);
+			DLTX_PARSER_LOG_ERR(root, "Could not found inheritance [%s] for section [%s]", token, root->cur_section->name);
 		}
 		dltx_section_update_keys(root->cur_section, p);
 		ar[i] = p;
@@ -177,7 +184,7 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 	DLTXSection *s = dltx_find_section(root->dltx, name);
 
 	if (s != NULL) {
-		fprintf(stderr, "ERROR: Section (%s) exist and overwrite flag is not set\n", name);
+		DLTX_PARSER_LOG_ERR(root, "Section [%s] exists and override flag is not set", name);
 		// Should error out
 	}
 
@@ -213,10 +220,7 @@ void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char
 	DLTXSection *s = _find_section(root->deletions, name);
 
 	if (s) {
-		fprintf(
-			stderr, "WARN (%s:%lu): Section %s was marked for deletion twice",
-			root->cur_file_path, root->cur_line, name
-		);
+		DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion twice", name);
 		return;
 	}
 
@@ -226,7 +230,7 @@ void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char
 
 void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) {
 	if (root->cur_section == NULL) {
-		fprintf(stderr, "cannot insert key into null section\n");
+		DLTX_PARSER_LOG_ERR(root, "Cannot insert key into null section");
 		return;
 	}
 
@@ -241,7 +245,7 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 
 	err = dltx_parser_process_file(root, to);
 	if (err != NO_ERROR)
-		fprintf(stderr, "IO error for %s\n", to);
+		DLTX_PARSER_LOG_ERR(root, "IO error");
 
 	free(to);
 	root->cur_file_path = from;
@@ -258,7 +262,7 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 
 	// Not the pretiest but just "works"
 	if (glob(to, GLOB_PERIOD, NULL, &gl) != 0) {
-		fprintf(stderr, "ERR: Globbing error on %s\n", to);
+		DLTX_PARSER_LOG_ERR(root, "Globbing error");
 		free(to);
 		return;
 	}
@@ -392,10 +396,7 @@ void _dltx_apply_overrides(DLTXParser *root) {
 		}
 
 		if (not_found_warn) {
-			fprintf(
-				stderr, "WARN: Section %s was marked for deletion but do not exist\n",
-				cur->name
-			);
+			DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion but do not exist", cur->name);
 		}
 	}
 
@@ -406,7 +407,7 @@ void _dltx_apply_overrides(DLTXParser *root) {
 		cur = *arr_cur;
 		temp = dltx_find_section(root->dltx, cur->name);
 		if (temp == NULL) {
-			fprintf(stderr, "ERR: Section (%s) don't exist and cannot be overriden\n", cur->name);
+			DLTX_PARSER_LOG_ERR(root, "Section [%s] doesn't exist and cannot be overriden", cur->name);
 			return;
 		}
 		dltx_section_update_keys(temp, cur);
@@ -489,10 +490,7 @@ DLTX_RETURN_CODE dltx_parser_parse_file(DLTX *dltx, const char filename[]) {
 }
 
 void dltx_parser_on_include_noop(DLTXParser *root, char path[]) {
-	fprintf(
-		stderr, "WARN: (%s:%lu) Inclusion from raw buffer are not yet supported\n",
-		root->cur_file_path, root->cur_line
-	);
+	DLTX_PARSER_LOG_WARN(root, "Inclusion from raw buffer are not yet supported");
 }
 
 DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buffer_size) {
