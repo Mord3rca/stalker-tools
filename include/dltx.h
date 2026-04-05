@@ -18,6 +18,11 @@ void dltx_cleanup(void);
 typedef struct {
 	char *name;
 	char *value;
+
+#ifdef DLTX_TRACE
+	char *file;
+	size_t line;
+#endif
 } DLTXKey;
 
 typedef struct _DLTXSection_s DLTXSection;
@@ -28,10 +33,19 @@ struct _DLTXSection_s {
 	DLTXSection **inheritance;
 
 	struct dynarray *keys;
+
+#ifdef DLTX_TRACE
+	char *file;
+	size_t line;
+#endif
 };
 
 typedef struct {
 	struct dynarray *sections;
+
+#ifdef DLTX_TRACE
+	struct dynarray *files;
+#endif
 } DLTX;
 
 /*
