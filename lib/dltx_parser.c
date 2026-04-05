@@ -43,7 +43,7 @@ char* _rstrip(char *s) {
 
 char *_lstrip(char *s) {
 	char *cur, *end;
-	size_t l = strlen(s);
+	size_t l = strlen(s) - 1;
 
 	for(cur = s + l, end = s; cur > end && isspace(*cur); *(cur--) = 0);
 
