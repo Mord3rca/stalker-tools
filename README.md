@@ -30,7 +30,7 @@ Here a list of shit to do for this is usefull:
   * [x] Support for section delete
   * [x] Support for key without value (= may not be present)
   * [ ] Better error report
-  * [ ] Trace support
+  * [x] Trace support
 
 * utils: Modding LUA definition file
   * [ ] Create a LUA LS Def. file for XRay Monolith LUA Engine

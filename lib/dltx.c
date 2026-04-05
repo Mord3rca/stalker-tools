@@ -53,6 +53,11 @@ DLTXKey *dltx_create_key(const char name[], const char value[]) {
 		k->value = strdup(value);
 	}
 
+#ifdef DLTX_TRACE
+	k->file = NULL;
+	k->line = -1;
+#endif
+
 	return k;
 }
 
@@ -72,6 +77,10 @@ DLTXKey *dltx_key_copy(DLTXKey *k) {
 	if(k->value)
 		r->value = strdup(k->value);
 
+#ifdef DLTX_TRACE
+	r->file = k->file;
+	r->line = k->line;
+#endif
 	return r;
 }
 
@@ -98,6 +107,11 @@ DLTXSection *dltx_create_section(const char name[]) {
 
 	// Used by DLTXReader
 	s->inheritance = NULL;
+
+#ifdef DLTX_TRACE
+	s->file = NULL;
+	s->line = -1;
+#endif
 
 	return s;
 }
@@ -175,10 +189,19 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 			if (cur -> value != NULL) {
 				fnd->value = strdup(cur->value);
 			}
+#ifdef DLTX_TRACE
+			fnd->file = cur->file;
+			fnd->line = cur->line;
+#endif
 			continue;
 		}
 
 		dltx_section_set_key(dest, cur->name, cur->value);
+#ifdef DLTX_TRACE
+		DLTXKey *k = dltx_section_get_key(dest, cur->name);
+		k->file = cur->file;
+		k->line = cur->line;
+#endif
 	}
 	return NO_ERROR;
 }
@@ -190,11 +213,17 @@ DLTX *dltx_create(void) {
 
 	dltx->sections = dynarray_create(dltx_default_section_array_size);
 
+#ifdef DLTX_TRACE
+	dltx->files = dynarray_create(32);
+#endif
 	return dltx;
 }
 
 void free_dltx(DLTX *l) {
 	free_dynarray(l->sections, (void (*)(void*))&free_dltx_section);
+#ifdef DLTX_TRACE
+	free_dynarray(l->files, &free);
+#endif
 	free(l);
 }
 
@@ -238,5 +267,3 @@ DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
 
 	return s;
 }
-
-

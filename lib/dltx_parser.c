@@ -192,6 +192,10 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 	}
 
 	s = dltx_create_new_section(root->dltx, name);
+#ifdef DLTX_TRACE
+	s->file = root->cur_file_path;
+	s->line = root->cur_line;
+#endif
 	root->cur_section = s;
 
 	dltx_parser_resolve_inheritance(root, inheritance);
@@ -214,6 +218,10 @@ void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE oty
 
 	if (s == NULL) {
 		s = dltx_create_section(name);
+#ifdef DLTX_TRACE
+		s->file = root->cur_file_path;
+		s->line = root->cur_line;
+#endif
 		dynarray_insert(root->overrides, s);
 	}
 
@@ -242,6 +250,11 @@ void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) 
 	}
 
 	dltx_section_set_key(root->cur_section, key, value);
+#ifdef DLTX_TRACE
+	DLTXKey *k = dltx_section_get_key(root->cur_section, key);
+	k->file = root->cur_file_path;
+	k->line = root->cur_line;
+#endif
 }
 
 void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
@@ -253,8 +266,11 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 	err = dltx_parser_process_file(root, to);
 	if (err != NO_ERROR)
 		DLTX_PARSER_LOG_ERR(root, "IO error");
-
+#ifdef DLTX_TRACE
+	dynarray_insert(root->dltx->files, to);
+#else
 	free(to);
+#endif
 	root->cur_file_path = from;
 	root->cur_line = sline;
 }
@@ -481,11 +497,16 @@ DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filenam
 
 	reader->cur_file_path = strdup(filename);
 	reader->cur_line = 1;
+#ifdef DLTX_TRACE
+	dynarray_insert(reader->dltx->files, reader->cur_file_path);
+#endif
 	// Processing loop
 	_dltx_parser_process_buffer(reader, buffer, dltx_parser_buffer_size);
 
 	free(buffer);
+#ifndef DLTX_TRACE
 	free(reader->cur_file_path);
+#endif
 	return NO_ERROR;
 }
 
@@ -519,10 +540,16 @@ DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buff
 
 	reader->cur_file_path = strdup("<raw buffer>");
 	reader->cur_line = 1;
+#ifdef DLTX_TRACE
+	// TODO: Can be dupped in case of multiple call of dltx_parser_parse_buffer
+	dynarray_insert(reader->dltx->files, reader->cur_file_path);
+#endif
 
 	_dltx_parser_process_buffer(reader, buffer, buffer_size);
 
+#ifndef DLTX_TRACE
 	free(reader->cur_file_path);
+#endif
 	free_dltx_parser(reader);
 	return NO_ERROR;
 }
