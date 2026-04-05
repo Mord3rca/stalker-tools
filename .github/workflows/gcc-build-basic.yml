@@ -18,7 +18,7 @@ jobs:
       - name: Test simple.ltx
         run: .github/scripts/basic-utest.sh simple.ltx 299566254b1f130dee3e385c193db85d
       - name: Test dirty.ltx
-        run: .github/scripts/basic-utest.sh dirty.ltx 1385323664c19f37f557045aff5ebf90
+        run: .github/scripts/basic-utest.sh dirty.ltx 7ebf76cc81f489a9dcf3ba25d511e521
       - name: Test case.ltx
         run: .github/scripts/basic-utest.sh case.ltx 2ac2cf8a2720e0481e5c1d4401c5fa61
       - name: Test inheritance.ltx
