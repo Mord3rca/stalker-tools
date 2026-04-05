@@ -53,6 +53,7 @@ void free_dltx_section(DLTXSection*);
 
 DLTXKey *dltx_section_get_key(DLTXSection*, const char[]);
 DLTX_RETURN_CODE dltx_section_set_key(DLTXSection*, const char[], const char[]);
+DLTX_RETURN_CODE dltx_section_del_key(DLTXSection*, const char[]);
 
 DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection*, const DLTXSection*);
 
