@@ -29,6 +29,9 @@ regex_t dltx_key_regex;
 regex_t dltx_include_regex;
 regex_t dltx_section_regex;
 
+// Starting flag key with ; so it wont collide with a real key
+const char DLTX_PARSER_SOVERRIDE_KEY[] = ";DLTX_SOVERRIDE";
+
 char* _rstrip(char *s) {
 	char *cur, *end;
 	size_t l = strlen(s);
@@ -111,7 +114,7 @@ struct _DLTXParser_s {
 	void (*on_include_directive)(DLTXParser*, char[]);
 	void (*on_glob_include_directive)(DLTXParser*, char[]);
 	void (*on_new_section)(DLTXParser*, char[], char[]);
-	void (*on_override_section)(DLTXParser*, char[], char[]);
+	void (*on_override_section)(DLTXParser*, OVERRIDE_TYPE, char[], char[]);
 	void (*on_deletion_section)(DLTXParser*, char[], char[]);
 };
 
@@ -206,13 +209,17 @@ static DLTXSection *_find_section(struct dynarray *arr, const char name[]) {
 	return NULL;
 }
 
-void dltx_parser_default_on_override_section(DLTXParser *root, char name[], char inheritance[]) {
+void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE otype, char name[], char inheritance[]) {
 	DLTXSection *s = _find_section(root->overrides, name);
 
 	if (s == NULL) {
 		s = dltx_create_section(name);
 		dynarray_insert(root->overrides, s);
 	}
+
+	if (otype == OVERRIDE_SAFE)
+		dltx_section_set_key(s, DLTX_PARSER_SOVERRIDE_KEY, NULL);
+
 	root->cur_section = s;
 }
 
@@ -289,6 +296,7 @@ bool _is_globbing(const char path[]) {
 
 void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 	char *inheritance;
+	OVERRIDE_TYPE otype;
 	size_t max_group = 5;  // Based on regex pattern @ beginning of the file
 	regmatch_t pmatch[max_group];
 
@@ -328,9 +336,11 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 			line[pmatch[4].rm_eo] = 0;
 		}
 
-		switch(_char_to_override_enum(line + pmatch[1].rm_so)) {
+		otype = _char_to_override_enum(line + pmatch[1].rm_so);
+		switch(otype) {
 		case OVERRIDE:
-			root->on_override_section(root, line + pmatch[2].rm_so, inheritance);
+		case OVERRIDE_SAFE:
+			root->on_override_section(root, otype, line + pmatch[2].rm_so, inheritance);
 			break;
 		case OVERRIDE_DELETE:
 			root->on_deletion_section(root, line + pmatch[2].rm_so, inheritance);
@@ -407,8 +417,12 @@ void _dltx_apply_overrides(DLTXParser *root) {
 		cur = *arr_cur;
 		temp = dltx_find_section(root->dltx, cur->name);
 		if (temp == NULL) {
-			DLTX_PARSER_LOG_ERR(root, "Section [%s] doesn't exist and cannot be overriden", cur->name);
-			return;
+			if (! dltx_section_get_key(cur, DLTX_PARSER_SOVERRIDE_KEY)) {
+				DLTX_PARSER_LOG_ERR(root, "Section [%s] doesn't exist and cannot be overriden", cur->name);
+				return;
+			}
+			temp = dltx_create_new_section(root->dltx, cur->name);
+			dltx_section_del_key(cur, DLTX_PARSER_SOVERRIDE_KEY);
 		}
 		dltx_section_update_keys(temp, cur);
 	}

@@ -138,6 +138,18 @@ DLTX_RETURN_CODE dltx_section_set_key(DLTXSection *sec, const char key[], const 
 	return NO_ERROR;
 }
 
+DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[]) {
+	DLTXKey *k;
+
+	k = dltx_section_get_key(sec, key);
+	if (k == NULL)
+		return NO_ERROR; // Don't exist, nothing to do
+
+	dynarray_remove(sec->keys, k);
+	free_dltx_key(k);
+	return NO_ERROR;
+}
+
 DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *src) {
 	DLTXKey *cur, *fnd;
 	DLTXKey **arr_cur;
