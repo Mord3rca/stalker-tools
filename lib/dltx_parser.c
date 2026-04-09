@@ -201,16 +201,12 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 	dltx_parser_resolve_inheritance(root, inheritance);
 }
 
+static bool _find_section_iterator(DLTXSection *member, const char *name) {
+	return strcasecmp(member->name, name) == 0;
+}
+
 static DLTXSection *_find_section(struct dynarray *arr, const char name[]) {
-	DLTXSection **cur, **end;
-
-	cur = (DLTXSection**)arr->arr;
-	end = (DLTXSection**)arr->arr + arr->size;
-	for (; cur < end; cur++)
-		if (strcasecmp((*cur)->name, name) == 0)
-			return *cur;
-
-	return NULL;
+	return dynarray_find(arr, (bool (*)(void*, void*))&_find_section_iterator, (void*)name);
 }
 
 void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE otype, char name[], char inheritance[]) {
@@ -394,54 +390,56 @@ void free_dltx_parser(DLTXParser *e) {
 	free(e);
 }
 
-void _dltx_apply_overrides(DLTXParser *root) {
-	DLTXSection **arr_cur, **arr_end;
-	DLTXSection *cur, *temp;
-	bool not_found_warn;
+static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXParser *root) {
+	DLTXSection *temp;
+	bool not_found_warn = true;
 
-	// Apply deletions
-	arr_cur = (DLTXSection**)root->deletions->arr;
-	arr_end = (DLTXSection**)root->deletions->arr + root->deletions->size;
-	for (; arr_cur < arr_end; arr_cur++) {
-		cur = *arr_cur;
-		not_found_warn = true;
-		// Remove from base
-		temp = _find_section(root->dltx->sections, cur->name);
-		if (temp) {
-			dynarray_remove(root->dltx->sections, temp);
-			free_dltx_section(temp);
-			not_found_warn = false;
-		}
-
-		// Remove from overrides
-		temp = _find_section(root->overrides, cur->name);
-		if (temp) {
-			dynarray_remove(root->overrides, temp);
-			free_dltx_section(temp);
-			not_found_warn = false;
-		}
-
-		if (not_found_warn) {
-			DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion but do not exist", cur->name);
-		}
+	// Remove from base
+	temp = _find_section(root->dltx->sections, sect->name);
+	if (temp) {
+		dynarray_remove(root->dltx->sections, temp);
+		free_dltx_section(temp);
+		not_found_warn = false;
 	}
+
+	// Remove from overrides
+	temp = _find_section(root->overrides, sect->name);
+	if (temp) {
+		dynarray_remove(root->overrides, temp);
+		free_dltx_section(temp);
+		not_found_warn = false;
+	}
+
+	if (not_found_warn) {
+		DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion but do not exist", sect->name);
+	}
+
+	return true;
+}
+
+static bool _dltx_apply_overrides_create_iterator(DLTXSection *sect, DLTXParser *root) {
+	DLTXSection *temp = dltx_find_section(root->dltx, sect->name);
+
+	if (temp == NULL) {
+		if (! dltx_section_get_key(sect, DLTX_PARSER_SOVERRIDE_KEY)) {
+			DLTX_PARSER_LOG_ERR(root, "Section [%s] doesn't exist and cannot be overriden", sect->name);
+			return false;
+		}
+
+		temp = dltx_create_new_section(root->dltx, sect->name);
+		dltx_section_del_key(sect, DLTX_PARSER_SOVERRIDE_KEY);
+	}
+	dltx_section_update_keys(temp, sect);
+
+	return true;
+}
+
+void _dltx_apply_overrides(DLTXParser *root) {
+	// Apply deletions
+	dynarray_foreach(root->deletions, (bool (*)(void*, void*))&_dltx_apply_overrides_deletions_iterator, root);
 
 	// Apply classic overrides
-	arr_cur = (DLTXSection**)root->overrides->arr;
-	arr_end = (DLTXSection**)root->overrides->arr + root->overrides->size;
-	for (; arr_cur < arr_end; arr_cur++) {
-		cur = *arr_cur;
-		temp = dltx_find_section(root->dltx, cur->name);
-		if (temp == NULL) {
-			if (! dltx_section_get_key(cur, DLTX_PARSER_SOVERRIDE_KEY)) {
-				DLTX_PARSER_LOG_ERR(root, "Section [%s] doesn't exist and cannot be overriden", cur->name);
-				return;
-			}
-			temp = dltx_create_new_section(root->dltx, cur->name);
-			dltx_section_del_key(cur, DLTX_PARSER_SOVERRIDE_KEY);
-		}
-		dltx_section_update_keys(temp, cur);
-	}
+	dynarray_foreach(root->overrides, (bool (*)(void*, void*))&_dltx_apply_overrides_create_iterator, root);
 }
 
 void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
