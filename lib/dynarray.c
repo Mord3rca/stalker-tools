@@ -12,23 +12,25 @@ struct dynarray *dynarray_create(int size) {
 	return o;
 }
 
-void free_dynarray(struct dynarray *o, void (*free_item)(void*)) {
-	void **cur, **end;
+static bool _free_iterator(void *m, void (*free_callback)(void*)) {
+	free_callback(m);
+	return true;
+}
 
+void free_dynarray(struct dynarray *o, void (*free_item)(void*)) {
 	if (free_item != NULL) {
-		for(cur = o->arr, end = o->arr + o->size; cur < end; cur++)
-			free_item(*cur);
+		dynarray_foreach(o, (bool (*)(void*, void*))&_free_iterator, free_item);
 	}
 
 	free(o->arr);
 	free(o);
 }
 
-void dynarray_foreach(struct dynarray *array, bool (*callback)(void*)) {
+void dynarray_foreach(struct dynarray *array, bool (*callback)(void*, void*), void* data) {
 	void **cur, **end;
 
 	for (cur = array->arr, end = array->arr + array->size; cur < end; cur++)
-		if (! callback(*cur))
+		if (! callback(*cur, data))
 			break;
 }
 
@@ -60,34 +62,49 @@ int dynarray_remove(struct dynarray *array, void *obj) {
 	return 0;
 }
 
-size_t dynarray_find_member_index(struct dynarray *array, void *member) {
+struct _find_member_index_args {
+	size_t pos;
+	void *member;
 	bool found;
-	size_t pos = -1;
+};
 
-	// Nobody will read this, it's fine !
-	bool iterator(void *o) {
-		found = o == member;
-		pos++;
-		return !found;
-	}
-
-	dynarray_foreach(array, &iterator);
-
-	return found ? pos : -1;
+static bool _find_member_iterator(void *o, struct _find_member_index_args *args) {
+	args->found = o == args->member;
+	args->pos++;
+	return !args->found;
 }
 
-void *dynarray_find(struct dynarray *array, bool (*callback)(void*)) {
-	void *result = NULL;
+size_t dynarray_find_member_index(struct dynarray *array, void *member) {
+	struct _find_member_index_args args;
+	args.pos = -1;
+	args.found = false;
+	args.member = member;
 
-	bool iterator(void *o) {
-		if (callback(o)) {
-			result = o;
-			return false; // Stop iteration
-		}
+	dynarray_foreach(array, (bool (*)(void*, void*))&_find_member_iterator, (void*)&args);
 
-		return true;
+	return args.found ? args.pos : -1;
+}
+
+struct _find_iterator_args {
+	void *data;
+	void *result;
+	bool (*callback)(void*, void*);
+};
+
+static bool _dynarray_find_iterator(void *o, struct _find_iterator_args *args) {
+	if (args->callback(o, args->data)) {
+		args->result = o;
+		return false;
 	}
+	return true;
+}
 
-	dynarray_foreach(array, &iterator);
-	return result;
+void *dynarray_find(struct dynarray *array, bool (*callback)(void*, void*), void *data) {
+	struct _find_iterator_args args;
+	args.data = data;
+	args.result = NULL;
+	args.callback = callback;
+
+	dynarray_foreach(array, (bool (*)(void*,void*))&_dynarray_find_iterator, (void*)&args);
+	return args.result;
 }
