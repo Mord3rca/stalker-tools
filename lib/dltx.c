@@ -118,8 +118,11 @@ DLTXSection *dltx_create_section(const char name[]) {
 
 void free_dltx_section(DLTXSection *s) {
 	free(s->name);
-	if (s->inheritance != NULL)
+	if (s->inheritance != NULL) {
+		for (char **i = s->inheritance; i && *i; i++)
+			free(*i);
 		free(s->inheritance);
+	}
 
 	free_dynarray(s->keys, (void (*)(void*))&free_dltx_key);
 	free(s);

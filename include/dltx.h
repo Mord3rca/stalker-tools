@@ -30,7 +30,7 @@ struct _DLTXSection_s {
 	char *name;
 
 	// A null terminated array since inheritance are limited
-	DLTXSection **inheritance;
+	char **inheritance;
 
 	struct dynarray *keys;
 

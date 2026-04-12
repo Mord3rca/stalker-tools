@@ -149,17 +149,16 @@ char *_relative_to(const char *path, const char *file) {
 }
 
 
-void dltx_parser_resolve_inheritance(DLTXParser *root, char inheritance[]) {
+static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) {
 	int i;
-	DLTXSection *p;
-	DLTXSection **ar;
+	char **ar;
 	char *str, *token, *saveptr;
 
 	if (!inheritance || *inheritance == 0)
 		return;
 
-	ar = calloc(sizeof(DLTXSection*), dltx_parser_max_inheritence);
-	memset(ar, 0, sizeof(DLTXSection*) * dltx_parser_max_inheritence);
+	ar = calloc(sizeof(char*), dltx_parser_max_inheritence);
+	memset(ar, 0, sizeof(char*) * dltx_parser_max_inheritence);
 
 	root->cur_section->inheritance = ar;
 
@@ -172,12 +171,7 @@ void dltx_parser_resolve_inheritance(DLTXParser *root, char inheritance[]) {
 		if (token == NULL)
 			break;
 
-		p = dltx_find_section(root->dltx, token);
-		if (p == NULL) {
-			DLTX_PARSER_LOG_ERR(root, "Could not found inheritance [%s] for section [%s]", token, root->cur_section->name);
-		}
-		dltx_section_update_keys(root->cur_section, p);
-		ar[i] = p;
+		ar[i] = strdup(token);
 	}
 }
 
@@ -197,7 +191,7 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 #endif
 	root->cur_section = s;
 
-	dltx_parser_resolve_inheritance(root, inheritance);
+	dltx_parser_parse_inheritance(root, inheritance);
 }
 
 static bool _find_section_iterator(DLTXSection *member, const char *name) {
