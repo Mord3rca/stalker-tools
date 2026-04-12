@@ -8,6 +8,7 @@ typedef enum {
 	INIT_ERROR = 1,
 	FILE_READ_ERROR,
 	FILE_TOO_BIG,
+	MISSING_BASE,
 } DLTX_RETURN_CODE;
 
 const char *dltx_return_code_to_str(DLTX_RETURN_CODE);
