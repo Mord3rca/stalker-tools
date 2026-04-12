@@ -29,9 +29,6 @@ regex_t dltx_key_regex;
 regex_t dltx_include_regex;
 regex_t dltx_section_regex;
 
-// Starting flag key with ; so it wont collide with a real key
-const char DLTX_PARSER_SOVERRIDE_KEY[] = ";DLTX_SOVERRIDE";
-
 char* _rstrip(char *s) {
 	char *cur, *end;
 	size_t l = strlen(s);
@@ -108,6 +105,8 @@ struct _DLTXParser_s {
 
 	size_t cur_line;
 	char *cur_file_path;
+
+	struct dynarray *soverrides;
 
 	void (*on_new_line)(DLTXParser*, char[]);
 	void (*on_new_key)(DLTXParser*, char[], char[]);
@@ -222,7 +221,7 @@ void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE oty
 	}
 
 	if (otype == OVERRIDE_SAFE)
-		dltx_section_set_key(s, DLTX_PARSER_SOVERRIDE_KEY, NULL);
+		dynarray_insert(root->soverrides, s->name);
 
 	root->cur_section = s;
 }
@@ -373,6 +372,8 @@ DLTXParser *dltx_create_parser() {
 	e->overrides = dynarray_create(32);
 	e->deletions = dynarray_create(8);
 
+	e->soverrides = dynarray_create(32);
+
 	e->on_new_key = dltx_parser_default_on_new_key;
 	e->on_new_line = dltx_parser_default_process_line;
 	e->on_new_section = dltx_parser_default_on_new_section;
@@ -387,6 +388,7 @@ DLTXParser *dltx_create_parser() {
 void free_dltx_parser(DLTXParser *e) {
 	free_dynarray(e->overrides, (void (*)(void*))&free_dltx_section);
 	free_dynarray(e->deletions, (void (*)(void*))&free_dltx_section);
+	free_dynarray(e->soverrides, NULL);
 	free(e);
 }
 
@@ -417,19 +419,9 @@ static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXPars
 	return true;
 }
 
-static bool _dltx_apply_overrides_create_iterator(DLTXSection *sect, DLTXParser *root) {
-	DLTXSection *temp = dltx_find_section(root->dltx, sect->name);
-
-	if (temp == NULL) {
-		if (! dltx_section_get_key(sect, DLTX_PARSER_SOVERRIDE_KEY)) {
-			DLTX_PARSER_LOG_ERR(root, "Section [%s] doesn't exist and cannot be overriden", sect->name);
-			return false;
-		}
-
-		temp = dltx_create_new_section(root->dltx, sect->name);
-		dltx_section_del_key(sect, DLTX_PARSER_SOVERRIDE_KEY);
-	}
-	dltx_section_update_keys(temp, sect);
+static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root) {
+	if (dltx_find_section(root->dltx, name) == NULL)
+		dltx_create_new_section(root->dltx, name);
 
 	return true;
 }
@@ -438,8 +430,8 @@ void _dltx_apply_overrides(DLTXParser *root) {
 	// Apply deletions
 	dynarray_foreach(root->deletions, (bool (*)(void*, void*))&_dltx_apply_overrides_deletions_iterator, root);
 
-	// Apply classic overrides
-	dynarray_foreach(root->overrides, (bool (*)(void*, void*))&_dltx_apply_overrides_create_iterator, root);
+	// Apply safe overrides
+	dynarray_foreach(root->soverrides, (bool (*)(void*, void*))&_dltx_apply_soverrides_create_iterator, root);
 }
 
 void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
