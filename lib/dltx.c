@@ -27,6 +27,10 @@ const char *dltx_return_code_to_str(DLTX_RETURN_CODE err) {
 	case INIT_ERROR:
 		return "Failure to init";
 		break;
+
+	case MISSING_BASE:
+		return "An override section did not found its base";
+		break;
 	default:
 		// Supposed to be dead code .... But we never know !
 		return "Dont know";

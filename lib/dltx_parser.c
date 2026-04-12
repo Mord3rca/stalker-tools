@@ -108,6 +108,8 @@ struct _DLTXParser_s {
 
 	struct dynarray *soverrides;
 
+	DLTX_RETURN_CODE err;
+
 	void (*on_new_line)(DLTXParser*, char[]);
 	void (*on_new_key)(DLTXParser*, char[], char[]);
 	void (*on_include_directive)(DLTXParser*, char[]);
@@ -368,6 +370,8 @@ DLTXParser *dltx_create_parser() {
 
 	e->soverrides = dynarray_create(32);
 
+	e->err = NO_ERROR;
+
 	e->on_new_key = dltx_parser_default_on_new_key;
 	e->on_new_line = dltx_parser_default_process_line;
 	e->on_new_section = dltx_parser_default_on_new_section;
@@ -420,12 +424,28 @@ static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root)
 	return true;
 }
 
+// TODO: Suboptimal ... But will do for now.
+static bool _dltx_verify_overrides(DLTXSection *s, DLTXParser *root) {
+	if (dltx_find_section(root->dltx, s->name) == NULL) {
+		DLTX_PARSER_LOG_ERR(root, "Section [%s] don't override anything", s->name);
+		root->err = MISSING_BASE;
+		return false;
+	}
+
+	return true;
+}
+
 void _dltx_apply_overrides(DLTXParser *root) {
+	// Apply safe overrides
+	dynarray_foreach(root->soverrides, (bool (*)(void*, void*))&_dltx_apply_soverrides_create_iterator, root);
+
 	// Apply deletions
 	dynarray_foreach(root->deletions, (bool (*)(void*, void*))&_dltx_apply_overrides_deletions_iterator, root);
 
-	// Apply safe overrides
-	dynarray_foreach(root->soverrides, (bool (*)(void*, void*))&_dltx_apply_soverrides_create_iterator, root);
+	// Smol verification
+	dynarray_foreach(root->overrides, (bool (*)(void*, void*))&_dltx_verify_overrides, root);
+	if (root->err != NO_ERROR)
+		return;  // Abort
 }
 
 void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
@@ -462,6 +482,7 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[]) {
 	char *buffer;
 	FILE *file = fopen(filename, "r");
+	DLTX_RETURN_CODE err;
 
 	if (file == NULL) {
 		return FILE_READ_ERROR;
@@ -486,12 +507,13 @@ DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filenam
 #endif
 	// Processing loop
 	_dltx_parser_process_buffer(reader, buffer, dltx_parser_buffer_size);
+	err = reader->err;
 
 	free(buffer);
 #ifndef DLTX_TRACE
 	free(reader->cur_file_path);
 #endif
-	return NO_ERROR;
+	return err;
 }
 
 // Entrypoint
@@ -513,6 +535,7 @@ void dltx_parser_on_include_noop(DLTXParser *root, char path[]) {
 }
 
 DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buffer_size) {
+	DLTX_RETURN_CODE err;
 	DLTXParser *reader;
 
 	reader = dltx_create_parser();
@@ -530,10 +553,11 @@ DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buff
 #endif
 
 	_dltx_parser_process_buffer(reader, buffer, buffer_size);
+	err = reader->err;
 
 #ifndef DLTX_TRACE
 	free(reader->cur_file_path);
 #endif
 	free_dltx_parser(reader);
-	return NO_ERROR;
+	return err;
 }
