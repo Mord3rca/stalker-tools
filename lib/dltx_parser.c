@@ -435,6 +435,62 @@ static bool _dltx_verify_overrides(DLTXSection *s, DLTXParser *root) {
 	return true;
 }
 
+static bool _is_in_immutable(const char name[], const char *immutable[]) {
+	const char **cur;
+
+	for (cur = immutable; cur && *cur; cur++)
+		if (strcmp(name, *cur) == 0)
+			return true;
+
+	return false;
+}
+
+DLTX_RETURN_CODE _dltx_update_some_keys(DLTXSection *dest, const DLTXSection *src, const char *immutable[]) {
+	DLTXKey **arr_cur = (DLTXKey**)src->keys->arr;
+	DLTXKey **arr_end = (DLTXKey**)src->keys->arr + src->keys->size;
+
+	for (; arr_cur < arr_end; arr_cur++) {
+		if (_is_in_immutable((*arr_cur)->name, immutable))
+			continue;
+
+		// TODO: Losing TRACE information....
+		dltx_section_set_key(dest, (*arr_cur)->name, (*arr_cur)->value);
+	}
+
+	return NO_ERROR;
+}
+
+static bool _dltx_resolve_section_iterator(DLTXSection *base, DLTXParser *root) {
+	DLTX owrapper;
+	DLTXSection *temp;
+	char **inheritance;
+	const char *immutable[base->keys->size+1];
+
+	immutable[base->keys->size] = 0;
+	for (size_t i = 0; i < base->keys->size; i++) {
+		immutable[i] = ((DLTXKey*)base->keys->arr[i])->name;
+	}
+
+	// Apply inheritance
+	for (inheritance = base->inheritance; inheritance && *inheritance; inheritance++) {
+		temp = dltx_find_section(root->dltx, *inheritance);
+		if (!temp) {
+			root->err = MISSING_BASE;
+			DLTX_PARSER_LOG_ERR(root, "Section [%s] could not inherit %s", base->name, *inheritance);
+			return false;
+		}
+		_dltx_update_some_keys(base, temp, immutable);
+	}
+
+	// Apply override if exist
+	owrapper.sections = root->overrides;
+	temp = dltx_find_section(&owrapper, base->name);
+	if (temp)
+		dltx_section_update_keys(base, temp);
+
+	return true;
+}
+
 void _dltx_apply_overrides(DLTXParser *root) {
 	// Apply safe overrides
 	dynarray_foreach(root->soverrides, (bool (*)(void*, void*))&_dltx_apply_soverrides_create_iterator, root);
@@ -446,6 +502,8 @@ void _dltx_apply_overrides(DLTXParser *root) {
 	dynarray_foreach(root->overrides, (bool (*)(void*, void*))&_dltx_verify_overrides, root);
 	if (root->err != NO_ERROR)
 		return;  // Abort
+
+	dynarray_foreach(root->dltx->sections, (bool (*)(void*, void*))&_dltx_resolve_section_iterator, root);
 }
 
 void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
