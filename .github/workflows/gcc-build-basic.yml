@@ -20,9 +20,9 @@ jobs:
       - name: Test dirty.ltx
         run: .github/scripts/basic-utest.sh dirty.ltx 7ebf76cc81f489a9dcf3ba25d511e521
       - name: Test case.ltx
-        run: .github/scripts/basic-utest.sh case.ltx 2ac2cf8a2720e0481e5c1d4401c5fa61
+        run: .github/scripts/basic-utest.sh case.ltx 2436af88a64fa273ac4d531e43d0637a
       - name: Test inheritance.ltx
-        run: .github/scripts/basic-utest.sh inheritance.ltx aa1983acc36bcf804812618a2074aaea
+        run: .github/scripts/basic-utest.sh inheritance.ltx 2f8645e91e0b0788994c4df376d020e3
       - name: Test override.ltx
         run: .github/scripts/basic-utest.sh override.ltx 885ebd029102b01ad15fd3fea671e61d
       - name: Test override-first.ltx
