@@ -21,25 +21,24 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/ActorCondition_script.cpp
 * [ ] src/xrGame/actor_script.cpp
 * [ ] src/xrGame/Actor_Weapon.cpp
-* [ ] src/xrGame/ai_crow_script.cpp
-* [ ] src/xrGame/ai/monsters/bloodsucker/bloodsucker_script.cpp
-* [ ] src/xrGame/ai/monsters/boar/boar_script.cpp
-* [ ] src/xrGame/ai/monsters/burer/burer_script.cpp
-* [ ] src/xrGame/ai/monsters/cat/cat_script.cpp
-* [ ] src/xrGame/ai/monsters/chimera/chimera_script.cpp
-* [ ] src/xrGame/ai/monsters/controller/controller_script.cpp
-* [ ] src/xrGame/ai/monsters/dog/dog_script.cpp
-* [ ] src/xrGame/ai/monsters/flesh/flesh_script.cpp
-* [ ] src/xrGame/ai/monsters/fracture/fracture_script.cpp
-* [ ] src/xrGame/ai/monsters/poltergeist/poltergeist_script.cpp
-* [ ] src/xrGame/ai/monsters/pseudodog/pseudodog_script.cpp
-* [ ] src/xrGame/ai/monsters/pseudogigant/pseudogigant_script.cpp
-* [ ] src/xrGame/ai/monsters/snork/snork_script.cpp
-* [ ] src/xrGame/ai/monsters/tushkano/tushkano_script.cpp
-* [ ] src/xrGame/ai/monsters/zombie/zombie_script.cpp
-* [ ] src/xrGame/ai/stalker/ai_stalker_debug.cpp
-* [ ] src/xrGame/ai/stalker/ai_stalker_script.cpp
-* [ ] src/xrGame/ai/trader/ai_trader_script.cpp
+* [x] src/xrGame/ai_crow_script.cpp
+* [x] src/xrGame/ai/monsters/bloodsucker/bloodsucker_script.cpp
+* [x] src/xrGame/ai/monsters/boar/boar_script.cpp
+* [x] src/xrGame/ai/monsters/burer/burer_script.cpp
+* [x] src/xrGame/ai/monsters/cat/cat_script.cpp
+* [x] src/xrGame/ai/monsters/chimera/chimera_script.cpp
+* [x] src/xrGame/ai/monsters/controller/controller_script.cpp
+* [x] src/xrGame/ai/monsters/dog/dog_script.cpp
+* [x] src/xrGame/ai/monsters/flesh/flesh_script.cpp
+* [x] src/xrGame/ai/monsters/fracture/fracture_script.cpp
+* [x] src/xrGame/ai/monsters/poltergeist/poltergeist_script.cpp
+* [x] src/xrGame/ai/monsters/pseudodog/pseudodog_script.cpp
+* [x] src/xrGame/ai/monsters/pseudogigant/pseudogigant_script.cpp
+* [x] src/xrGame/ai/monsters/snork/snork_script.cpp
+* [x] src/xrGame/ai/monsters/tushkano/tushkano_script.cpp
+* [x] src/xrGame/ai/monsters/zombie/zombie_script.cpp
+* [x] src/xrGame/ai/stalker/ai_stalker_script.cpp
+* [x] src/xrGame/ai/trader/ai_trader_script.cpp
 * [ ] src/xrGame/alife_monster_brain_script.cpp
 * [ ] src/xrGame/alife_monster_detail_path_manager_script.cpp
 * [ ] src/xrGame/alife_monster_movement_manager_script.cpp
