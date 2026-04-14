@@ -39,12 +39,12 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/ai/monsters/zombie/zombie_script.cpp
 * [x] src/xrGame/ai/stalker/ai_stalker_script.cpp
 * [x] src/xrGame/ai/trader/ai_trader_script.cpp
-* [ ] src/xrGame/alife_monster_brain_script.cpp
-* [ ] src/xrGame/alife_monster_detail_path_manager_script.cpp
-* [ ] src/xrGame/alife_monster_movement_manager_script.cpp
-* [ ] src/xrGame/alife_monster_patrol_path_manager_script.cpp
-* [ ] src/xrGame/alife_simulator_script.cpp
-* [ ] src/xrGame/alife_smart_terrain_task_script.cpp
+* [x] src/xrGame/alife_monster_brain_script.cpp
+* [x] src/xrGame/alife_monster_detail_path_manager_script.cpp
+* [x] src/xrGame/alife_monster_movement_manager_script.cpp
+* [x] src/xrGame/alife_monster_patrol_path_manager_script.cpp
+* [x] src/xrGame/alife_simulator_script.cpp
+* [x] src/xrGame/alife_smart_terrain_task_script.cpp
 * [ ] src/xrGame/antirad_script.cpp
 * [ ] src/xrGame/artefact_script.cpp
 * [x] src/xrGame/base_client_classes_script.cpp
