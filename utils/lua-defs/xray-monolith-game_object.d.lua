@@ -1,6 +1,11 @@
 ---@meta
 
--- Exported in src/xrGame/script_game_object_script2.cpp
+-- Exported in src\xrGame\script_game_object_script.cpp
+
+---@class game_object
+game_object = {}
+
+-- Exported in src\xrGame\script_game_object_script2.cpp
 
 ---@enum EPathType
 EPathType = {

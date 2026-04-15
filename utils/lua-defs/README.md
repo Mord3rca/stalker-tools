@@ -20,7 +20,6 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/action_planner_script.cpp
 * [ ] src/xrGame/ActorCondition_script.cpp
 * [ ] src/xrGame/actor_script.cpp
-* [ ] src/xrGame/Actor_Weapon.cpp
 * [x] src/xrGame/ai_crow_script.cpp
 * [x] src/xrGame/ai/monsters/bloodsucker/bloodsucker_script.cpp
 * [x] src/xrGame/ai/monsters/boar/boar_script.cpp
@@ -157,28 +156,28 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/ui/UIStatic_script.cpp
 * [ ] src/xrGame/ui/UITabControl_script.cpp
 * [ ] src/xrGame/ui/UIWindow_script.cpp
-* [ ] src/xrGame/WeaponAK74.cpp
-* [ ] src/xrGame/WeaponAmmo_script.cpp
-* [ ] src/xrGame/WeaponBinoculars_script.cpp
-* [ ] src/xrGame/weaponBM16_script.cpp
-* [ ] src/xrGame/WeaponFN2000.cpp
-* [ ] src/xrGame/WeaponFORT.cpp
-* [ ] src/xrGame/WeaponGroza.cpp
-* [ ] src/xrGame/WeaponHPSA_script.cpp
-* [ ] src/xrGame/WeaponKnife_script.cpp
-* [ ] src/xrGame/WeaponLR300.cpp
-* [ ] src/xrGame/WeaponPM.cpp
-* [ ] src/xrGame/WeaponRG6_script.cpp
-* [ ] src/xrGame/WeaponRPG7_script.cpp
-* [ ] src/xrGame/weaponshotgun_script.cpp
-* [ ] src/xrGame/WeaponSSRS_script.cpp
-* [ ] src/xrGame/WeaponStatMgunIR.cpp
-* [ ] src/xrGame/WeaponSVD.cpp
-* [ ] src/xrGame/WeaponSVU.cpp
-* [ ] src/xrGame/WeaponUSP45.cpp
-* [ ] src/xrGame/WeaponVal.cpp
-* [ ] src/xrGame/WeaponVintorez.cpp
-* [ ] src/xrGame/WeaponWalther.cpp
+* [x] src/xrGame/WeaponAK74.cpp
+* [x] src/xrGame/WeaponAmmo_script.cpp
+* [x] src/xrGame/WeaponBinoculars_script.cpp
+* [x] src/xrGame/weaponBM16_script.cpp
+* [x] src/xrGame/WeaponFN2000.cpp
+* [x] src/xrGame/WeaponFORT.cpp
+* [x] src/xrGame/WeaponGroza.cpp
+* [x] src/xrGame/WeaponHPSA_script.cpp
+* [x] src/xrGame/WeaponKnife_script.cpp
+* [x] src/xrGame/WeaponLR300.cpp
+* [x] src/xrGame/WeaponPM.cpp
+* [x] src/xrGame/WeaponRG6_script.cpp
+* [x] src/xrGame/WeaponRPG7_script.cpp
+* [x] src/xrGame/weaponshotgun_script.cpp
+* [x] src/xrGame/WeaponSSRS_script.cpp
+* [x] src/xrGame/WeaponStatMgunIR.cpp
+* [x] src/xrGame/WeaponSVD.cpp
+* [x] src/xrGame/WeaponSVU.cpp
+* [x] src/xrGame/WeaponUSP45.cpp
+* [x] src/xrGame/WeaponVal.cpp
+* [x] src/xrGame/WeaponVintorez.cpp
+* [x] src/xrGame/WeaponWalther.cpp
 * [ ] src/xrServerEntities/doug_lea_memory_allocator.c
 * [ ] src/xrServerEntities/object_factory_script.cpp
 * [ ] src/xrServerEntities/script_engine_script.cpp
