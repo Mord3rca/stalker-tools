@@ -55,9 +55,10 @@ typedef struct {
 DLTXKey *dltx_create_key(const char[], const char[]);
 void free_dltx_key(DLTXKey*);
 
-DLTXKey *dltx_key_copy(DLTXKey*);
+DLTXKey *dltx_key_copy(const DLTXKey*);
 
 void dltx_key_set_value(DLTXKey*, const char[]);
+void dltx_key_update(DLTXKey*, const DLTXKey*);
 
 /*
  * DLTXSECTION methods
@@ -69,6 +70,8 @@ void free_dltx_section(DLTXSection*);
 DLTXKey *dltx_section_get_key(DLTXSection*, const char[]);
 DLTX_RETURN_CODE dltx_section_set_key(DLTXSection*, const char[], const char[]);
 DLTX_RETURN_CODE dltx_section_del_key(DLTXSection*, const char[]);
+
+DLTX_RETURN_CODE dltx_section_update_key(DLTXSection*, const DLTXKey*);
 
 DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection*, const DLTXSection*);
 
