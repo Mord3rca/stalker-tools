@@ -86,4 +86,6 @@ DLTX_RETURN_CODE dltx_read_buffer(DLTX*, char[], size_t);
 DLTXSection *dltx_find_section(DLTX*, const char[]);
 DLTXSection *dltx_create_new_section(DLTX*, const char[]);
 
+bool dltx_delete_section(DLTX*, const char[]);
+
 #endif //_DLTX_HEADER
