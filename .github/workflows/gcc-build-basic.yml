@@ -16,20 +16,20 @@ jobs:
       - name: Building
         run: ./build.sh
       - name: Test simple.ltx
-        run: .github/scripts/basic-utest.sh simple.ltx 299566254b1f130dee3e385c193db85d
+        run: .github/scripts/basic-utest.sh simple.ltx
       - name: Test dirty.ltx
-        run: .github/scripts/basic-utest.sh dirty.ltx 7ebf76cc81f489a9dcf3ba25d511e521
+        run: .github/scripts/basic-utest.sh dirty.ltx
       - name: Test case.ltx
-        run: .github/scripts/basic-utest.sh case.ltx 2436af88a64fa273ac4d531e43d0637a
+        run: .github/scripts/basic-utest.sh case.ltx
       - name: Test inheritance.ltx
-        run: .github/scripts/basic-utest.sh inheritance.ltx 2f8645e91e0b0788994c4df376d020e3
+        run: .github/scripts/basic-utest.sh inheritance.ltx
       - name: Test override.ltx
-        run: .github/scripts/basic-utest.sh override.ltx 885ebd029102b01ad15fd3fea671e61d
+        run: .github/scripts/basic-utest.sh override.ltx
       - name: Test override-first.ltx
-        run: .github/scripts/basic-utest.sh override-first.ltx 5b6c3244fa22ee968deda055ca415376
+        run: .github/scripts/basic-utest.sh override-first.ltx
       - name: Test override-safe.ltx
-        run: .github/scripts/basic-utest.sh override-safe.ltx c9b6d91ab0b4960f7e612ce8d972ae82
+        run: .github/scripts/basic-utest.sh override-safe.ltx
       - name: Test deletion.ltx
-        run: .github/scripts/basic-utest.sh deletion.ltx 48810c0b253e184c644f52c98afb98de
+        run: .github/scripts/basic-utest.sh deletion.ltx
       - name: Test glob.ltx
-        run: .github/scripts/basic-utest.sh glob.ltx d93930a3f1185173639710ba7a17cf1c
+        run: .github/scripts/basic-utest.sh glob.ltx
