@@ -398,17 +398,6 @@ static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root)
 	return true;
 }
 
-// TODO: Suboptimal ... But will do for now.
-static bool _dltx_verify_overrides(DLTXSection *s, DLTXParser *root) {
-	if (dltx_find_section(root->dltx, s->name) == NULL) {
-		DLTX_PARSER_LOG_ERR(root, "Section [%s] don't override anything", s->name);
-		root->err = MISSING_BASE;
-		return false;
-	}
-
-	return true;
-}
-
 static bool _is_in_immutable(const char name[], const char *immutable[]) {
 	const char **cur;
 
@@ -433,7 +422,7 @@ DLTX_RETURN_CODE _dltx_update_some_keys(DLTXSection *dest, const DLTXSection *sr
 	return NO_ERROR;
 }
 
-static bool _dltx_resolve_section_iterator(DLTXSection *base, DLTXParser *root) {
+static void _dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, DLTXSection *over) {
 	DLTXSection *temp;
 	char **inheritance;
 	const char *immutable[base->keys->size+1];
@@ -449,18 +438,48 @@ static bool _dltx_resolve_section_iterator(DLTXSection *base, DLTXParser *root) 
 		if (!temp) {
 			root->err = MISSING_BASE;
 			DLTX_PARSER_LOG_ERR(root, "Section [%s] could not inherit %s", base->name, *inheritance);
-			return false;
+			return;
 		}
 		_dltx_update_some_keys(base, temp, immutable);
 	}
 
-	temp = dltx_find_section(root->overrides, base->name);
-	if (temp)
-		dltx_section_update_keys(base, temp);
+	if (over)
+		dltx_section_update_keys(base, over);
 
 	dltx_section_sort(base);
+}
 
-	return true;
+static void _dltx_parser_evaluate_all(DLTXParser *root) {
+	int result;
+	DLTXSection *base, *over;
+	DLTXSection **base_cur, **base_end;
+	DLTXSection **override_cur, **override_end;
+
+	base_cur = (DLTXSection**)root->dltx->sections->arr;
+	base_end = base_cur + root->dltx->sections->size;
+
+	override_cur = (DLTXSection**)root->overrides->sections->arr;
+	override_end = override_cur + root->overrides->sections->size;
+
+	over = NULL;
+	for(base = *base_cur; base_cur < base_end; base=*(++base_cur), over=NULL) {
+		//find override
+		if (override_cur < override_end) {
+			over = *override_cur;
+			result = strcmp(base->name, over->name);
+			if (result > 0) {
+				DLTX_PARSER_LOG_ERR(root, "Section [%s] don't override anything", over->name);
+				root->err = MISSING_BASE;
+				return;
+			} else if (result == 0) {
+				// Found it !
+				override_cur++;
+			} else {
+				over = NULL;
+			}
+		}
+		_dltx_parser_evaluate_section(root, base, over);
+	}
 }
 
 void _dltx_apply_overrides(DLTXParser *root) {
@@ -470,14 +489,10 @@ void _dltx_apply_overrides(DLTXParser *root) {
 	// Apply deletions
 	dynarray_foreach(root->deletions->sections, (bool (*)(void*, void*))&_dltx_apply_overrides_deletions_iterator, root);
 
-	// Smol verification
-	dynarray_foreach(root->overrides->sections, (bool (*)(void*, void*))&_dltx_verify_overrides, root);
-	if (root->err != NO_ERROR)
-		return;  // Abort
-
 	dltx_sort(root->dltx);
+	dltx_sort(root->overrides);
 
-	dynarray_foreach(root->dltx->sections, (bool (*)(void*, void*))&_dltx_resolve_section_iterator, root);
+	_dltx_parser_evaluate_all(root);
 }
 
 void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
