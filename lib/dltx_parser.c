@@ -522,8 +522,6 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 			break;
 		}
 	}
-
-	_dltx_apply_overrides(root);
 }
 
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[]) {
@@ -573,6 +571,9 @@ DLTX_RETURN_CODE dltx_parser_parse_file(DLTX *dltx, const char filename[]) {
 
 	err = dltx_parser_process_file(reader, filename);
 
+	if (err == NO_ERROR)
+		_dltx_apply_overrides(reader);
+
 	free_dltx_parser(reader);
 	return err;
 }
@@ -601,6 +602,9 @@ DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buff
 
 	_dltx_parser_process_buffer(reader, buffer, buffer_size);
 	err = reader->err;
+
+	if (err == NO_ERROR)
+		_dltx_apply_overrides(reader);
 
 #ifndef DLTX_TRACE
 	free(reader->cur_file_path);
