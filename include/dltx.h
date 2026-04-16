@@ -72,6 +72,8 @@ DLTX_RETURN_CODE dltx_section_del_key(DLTXSection*, const char[]);
 
 DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection*, const DLTXSection*);
 
+void dltx_section_sort(DLTXSection*);
+
 /*
  * DLTX methods
  */
@@ -87,5 +89,7 @@ DLTXSection *dltx_find_section(DLTX*, const char[]);
 DLTXSection *dltx_create_new_section(DLTX*, const char[]);
 
 bool dltx_delete_section(DLTX*, const char[]);
+
+void dltx_sort(DLTX*);
 
 #endif //_DLTX_HEADER

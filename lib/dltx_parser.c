@@ -459,6 +459,8 @@ static bool _dltx_resolve_section_iterator(DLTXSection *base, DLTXParser *root) 
 	if (temp)
 		dltx_section_update_keys(base, temp);
 
+	dltx_section_sort(base);
+
 	return true;
 }
 
@@ -473,6 +475,8 @@ void _dltx_apply_overrides(DLTXParser *root) {
 	dynarray_foreach(root->overrides->sections, (bool (*)(void*, void*))&_dltx_verify_overrides, root);
 	if (root->err != NO_ERROR)
 		return;  // Abort
+
+	dltx_sort(root->dltx);
 
 	dynarray_foreach(root->dltx->sections, (bool (*)(void*, void*))&_dltx_resolve_section_iterator, root);
 }

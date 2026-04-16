@@ -213,6 +213,14 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 	return NO_ERROR;
 }
 
+static int _dltx_key_name_cmp(const DLTXKey **a, const DLTXKey **b) {
+	return strcmp((*a)->name, (*b)->name);
+}
+
+void dltx_section_sort(DLTXSection *s) {
+	qsort(s->keys->arr, s->keys->size, sizeof(DLTXKey*), (int (*)(const void*, const void*))&_dltx_key_name_cmp);
+}
+
 // DLTX Methods
 
 DLTX *dltx_create(void) {
@@ -283,4 +291,12 @@ bool dltx_delete_section(DLTX *root, const char name[]) {
 	dynarray_remove(root->sections, s);
 	free_dltx_section(s);
 	return true;
+}
+
+static int _dltx_section_name_cmp(const DLTXSection **a, const DLTXSection **b) {
+       return strcmp((*a)->name, (*b)->name);
+}
+
+void dltx_sort(DLTX* root) {
+	qsort(root->sections->arr, root->sections->size, sizeof(DLTXSection*), (int (*)(const void*, const void*))&_dltx_section_name_cmp);
 }
