@@ -98,15 +98,15 @@ static OVERRIDE_TYPE _char_to_override_enum(const char modifier[2] /* Assuming m
 typedef struct _DLTXParser_s DLTXParser;
 struct _DLTXParser_s {
 	DLTX *dltx;
+	DLTX *overrides;
+	DLTX *deletions;
+
 	DLTXSection *cur_section;
 
-	struct dynarray *overrides;
-	struct dynarray *deletions;
+	struct dynarray *soverrides;
 
 	size_t cur_line;
 	char *cur_file_path;
-
-	struct dynarray *soverrides;
 
 	DLTX_RETURN_CODE err;
 
@@ -196,24 +196,15 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 	dltx_parser_parse_inheritance(root, inheritance);
 }
 
-static bool _find_section_iterator(DLTXSection *member, const char *name) {
-	return strcasecmp(member->name, name) == 0;
-}
-
-static DLTXSection *_find_section(struct dynarray *arr, const char name[]) {
-	return dynarray_find(arr, (bool (*)(void*, void*))&_find_section_iterator, (void*)name);
-}
-
 void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE otype, char name[], char inheritance[]) {
-	DLTXSection *s = _find_section(root->overrides, name);
+	DLTXSection *s = dltx_find_section(root->overrides, name);
 
 	if (s == NULL) {
-		s = dltx_create_section(name);
+		s = dltx_create_new_section(root->overrides, name);
 #ifdef DLTX_TRACE
 		s->file = root->cur_file_path;
 		s->line = root->cur_line;
 #endif
-		dynarray_insert(root->overrides, s);
 	}
 
 	if (otype == OVERRIDE_SAFE)
@@ -223,15 +214,14 @@ void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE oty
 }
 
 void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char inheritance[]) {
-	DLTXSection *s = _find_section(root->deletions, name);
+	DLTXSection *s = dltx_find_section(root->deletions, name);
 
 	if (s) {
 		DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion twice", name);
 		return;
 	}
 
-	s = dltx_create_section(name);
-	dynarray_insert(root->deletions, s);
+	dltx_create_new_section(root->deletions, name);
 }
 
 void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) {
@@ -365,8 +355,8 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 DLTXParser *dltx_create_parser() {
 	DLTXParser *e = malloc(sizeof(DLTXParser));
 
-	e->overrides = dynarray_create(32);
-	e->deletions = dynarray_create(8);
+	e->overrides = dltx_create();
+	e->deletions = dltx_create();
 
 	e->soverrides = dynarray_create(32);
 
@@ -384,33 +374,17 @@ DLTXParser *dltx_create_parser() {
 }
 
 void free_dltx_parser(DLTXParser *e) {
-	free_dynarray(e->overrides, (void (*)(void*))&free_dltx_section);
-	free_dynarray(e->deletions, (void (*)(void*))&free_dltx_section);
+	free_dltx(e->overrides);
+	free_dltx(e->deletions);
 	free_dynarray(e->soverrides, NULL);
 	free(e);
 }
 
 static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXParser *root) {
-	DLTXSection *temp;
-	bool not_found_warn = true;
-
-	// Remove from base
-	temp = _find_section(root->dltx->sections, sect->name);
-	if (temp) {
-		dynarray_remove(root->dltx->sections, temp);
-		free_dltx_section(temp);
-		not_found_warn = false;
-	}
-
-	// Remove from overrides
-	temp = _find_section(root->overrides, sect->name);
-	if (temp) {
-		dynarray_remove(root->overrides, temp);
-		free_dltx_section(temp);
-		not_found_warn = false;
-	}
-
-	if (not_found_warn) {
+	if (
+		!dltx_delete_section(root->dltx, sect->name) ||
+		!dltx_delete_section(root->overrides, sect->name)
+	) {
 		DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion but do not exist", sect->name);
 	}
 
@@ -461,7 +435,6 @@ DLTX_RETURN_CODE _dltx_update_some_keys(DLTXSection *dest, const DLTXSection *sr
 }
 
 static bool _dltx_resolve_section_iterator(DLTXSection *base, DLTXParser *root) {
-	DLTX owrapper;
 	DLTXSection *temp;
 	char **inheritance;
 	const char *immutable[base->keys->size+1];
@@ -482,9 +455,7 @@ static bool _dltx_resolve_section_iterator(DLTXSection *base, DLTXParser *root) 
 		_dltx_update_some_keys(base, temp, immutable);
 	}
 
-	// Apply override if exist
-	owrapper.sections = root->overrides;
-	temp = dltx_find_section(&owrapper, base->name);
+	temp = dltx_find_section(root->overrides, base->name);
 	if (temp)
 		dltx_section_update_keys(base, temp);
 
@@ -496,10 +467,10 @@ void _dltx_apply_overrides(DLTXParser *root) {
 	dynarray_foreach(root->soverrides, (bool (*)(void*, void*))&_dltx_apply_soverrides_create_iterator, root);
 
 	// Apply deletions
-	dynarray_foreach(root->deletions, (bool (*)(void*, void*))&_dltx_apply_overrides_deletions_iterator, root);
+	dynarray_foreach(root->deletions->sections, (bool (*)(void*, void*))&_dltx_apply_overrides_deletions_iterator, root);
 
 	// Smol verification
-	dynarray_foreach(root->overrides, (bool (*)(void*, void*))&_dltx_verify_overrides, root);
+	dynarray_foreach(root->overrides->sections, (bool (*)(void*, void*))&_dltx_verify_overrides, root);
 	if (root->err != NO_ERROR)
 		return;  // Abort
 

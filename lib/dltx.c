@@ -274,3 +274,13 @@ DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
 
 	return s;
 }
+
+bool dltx_delete_section(DLTX *root, const char name[]) {
+	DLTXSection *s = dltx_find_section(root, name);
+	if(!s)
+		return false;
+
+	dynarray_remove(root->sections, s);
+	free_dltx_section(s);
+	return true;
+}
