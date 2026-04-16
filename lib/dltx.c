@@ -72,7 +72,7 @@ void free_dltx_key(DLTXKey *k) {
 	free(k);
 }
 
-DLTXKey *dltx_key_copy(DLTXKey *k) {
+DLTXKey *dltx_key_copy(const DLTXKey *k) {
 	DLTXKey *r = malloc(sizeof(DLTXKey));
 
 	r->name = strdup(k->name);
@@ -96,6 +96,23 @@ void dltx_key_set_value(DLTXKey *k, const char value[]) {
 		free(k->value);
 
 	k->value = strdup(value);
+}
+
+void dltx_key_update(DLTXKey *dest, const DLTXKey *src) {
+	if (!src)
+		return;
+
+	if (dest->value)
+		free(dest->value);
+	dest->value = NULL;
+
+	if (src->value)
+		dest->value = strdup(src->value);
+
+#ifdef DLTX_TRACE
+	dest->file = src->file;
+	dest->line = src->line;
+#endif
 }
 
 // DLTXSection methods
@@ -168,6 +185,19 @@ DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[]) {
 
 	dynarray_remove(sec->keys, k);
 	free_dltx_key(k);
+	return NO_ERROR;
+}
+
+DLTX_RETURN_CODE dltx_section_update_key(DLTXSection *section, const DLTXKey *src) {
+	DLTXKey *dest = dltx_section_get_key(section, src->name);
+
+	if (!dest) {
+		dest = dltx_key_copy(src);
+		dynarray_insert(section->keys, dest);
+		return NO_ERROR;
+	}
+
+	dltx_key_update(dest, src);
 	return NO_ERROR;
 }
 

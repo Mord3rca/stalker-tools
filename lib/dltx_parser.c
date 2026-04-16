@@ -427,8 +427,7 @@ DLTX_RETURN_CODE _dltx_update_some_keys(DLTXSection *dest, const DLTXSection *sr
 		if (_is_in_immutable((*arr_cur)->name, immutable))
 			continue;
 
-		// TODO: Losing TRACE information....
-		dltx_section_set_key(dest, (*arr_cur)->name, (*arr_cur)->value);
+		dltx_section_update_key(dest, *arr_cur);
 	}
 
 	return NO_ERROR;
