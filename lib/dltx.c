@@ -296,10 +296,22 @@ DLTX_RETURN_CODE dltx_read_buffer(DLTX *root, char buffer[], size_t buffer_size)
 	return dltx_parser_parse_buffer(root, buffer, buffer_size);
 }
 
-DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
+static int _dltx_section_name_bsearch(const char *name, const DLTXSection **section) {
+	return strcmp(name, (*section)->name);
+}
+
+static DLTXSection *_dltx_find_section_bsearch(DLTX *root, const char name[]) {
+	DLTXSection **r;
+
+	r = bsearch(
+		name, root->sections->arr, root->sections->size, sizeof(DLTXSection*),
+		(int (*)(const void*, const void*))&_dltx_section_name_bsearch
+	);
+	return (r ? *r : NULL);
+}
+
+static DLTXSection *_dltx_find_section(DLTX *root, const char name[]) {
 	DLTXSection *cur;
-	if (!root->sections)
-		return NULL;
 
 	for(int i = 0; i < root->sections->size; i++) {
 		cur = root->sections->arr[i];
@@ -307,6 +319,15 @@ DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
 			return cur;
 	}
 	return NULL;
+}
+
+DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
+	if (!root->sections)
+		return NULL;
+
+	return ((root->flags & DLTX_SORTED) > 0) ?
+		_dltx_find_section_bsearch(root, name) :
+		_dltx_find_section(root, name);
 }
 
 DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
@@ -318,6 +339,7 @@ DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
 	s = dltx_create_section(name);
 	dynarray_insert(root->sections, s);
 
+	root->flags &= ~DLTX_SORTED;
 	return s;
 }
 
@@ -333,6 +355,8 @@ bool dltx_delete_section(DLTX *root, const char name[]) {
 
 	dynarray_remove(root->sections, s);
 	free_dltx_section(s);
+
+	root->flags &= ~DLTX_SORTED;
 	return true;
 }
 
@@ -349,4 +373,5 @@ static int _dltx_section_name_cmp(const DLTXSection **a, const DLTXSection **b) 
 
 void dltx_sort(DLTX* root) {
 	qsort(root->sections->arr, root->sections->size, sizeof(DLTXSection*), (int (*)(const void*, const void*))&_dltx_section_name_cmp);
+	root->flags |= DLTX_SORTED;
 }

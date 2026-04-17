@@ -4,6 +4,7 @@
 #include "dynarray.h"
 
 #define DLTX_READONLY 1 << 0
+#define DLTX_SORTED   1 << 1
 
 typedef enum {
 	NO_ERROR = 0,
