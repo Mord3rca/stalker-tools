@@ -261,6 +261,9 @@ DLTX *dltx_create(void) {
 #ifdef DLTX_TRACE
 	dltx->files = dynarray_create(32);
 #endif
+
+	dltx->flags = 0;
+
 	return dltx;
 }
 
@@ -307,20 +310,37 @@ DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
 }
 
 DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
-	DLTXSection *s = dltx_create_section(name);
+	DLTXSection *s;
+
+	if ((root->flags & DLTX_READONLY) > 0)
+		return NULL;
+
+	s = dltx_create_section(name);
 	dynarray_insert(root->sections, s);
 
 	return s;
 }
 
 bool dltx_delete_section(DLTX *root, const char name[]) {
-	DLTXSection *s = dltx_find_section(root, name);
+	DLTXSection *s;
+
+	if ((root->flags & DLTX_READONLY) > 0)
+		return false;
+
+	s = dltx_find_section(root, name);
 	if(!s)
 		return false;
 
 	dynarray_remove(root->sections, s);
 	free_dltx_section(s);
 	return true;
+}
+
+void dltx_set_readonly(DLTX *root, bool ro) {
+	if (ro)
+		root->flags |= DLTX_READONLY;
+	else
+		root->flags &= ~DLTX_READONLY;
 }
 
 static int _dltx_section_name_cmp(const DLTXSection **a, const DLTXSection **b) {

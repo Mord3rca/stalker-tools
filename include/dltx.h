@@ -3,6 +3,8 @@
 
 #include "dynarray.h"
 
+#define DLTX_READONLY 1 << 0
+
 typedef enum {
 	NO_ERROR = 0,
 	INIT_ERROR = 1,
@@ -47,6 +49,8 @@ typedef struct {
 #ifdef DLTX_TRACE
 	struct dynarray *files;
 #endif
+
+	int flags;
 } DLTX;
 
 /*
@@ -92,6 +96,8 @@ DLTXSection *dltx_find_section(DLTX*, const char[]);
 DLTXSection *dltx_create_new_section(DLTX*, const char[]);
 
 bool dltx_delete_section(DLTX*, const char[]);
+
+void dltx_set_readonly(DLTX*, bool);
 
 void dltx_sort(DLTX*);
 
