@@ -25,7 +25,7 @@ test_file() {
 if [ "${#}" -eq 1 ]; then
 	test_file "${@}"
 else
-	for f in tests/data/*.ltx; do
+	for f in tests/expected/*.ltx; do
 		echo "--- TESTING ${f} ---"
 		test_file "$(basename "${f}")"
 	done
