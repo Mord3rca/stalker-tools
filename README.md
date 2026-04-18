@@ -29,6 +29,7 @@ Here a list of shit to do for this is usefull:
   * [x] Support for SafeOverride (create if not exist)
   * [x] Support for section delete
   * [x] Support for key without value (= may not be present)
+  * [x] Support of mod_* files
   * [ ] Better error report
   * [x] Trace support
 
@@ -38,7 +39,6 @@ Here a list of shit to do for this is usefull:
 
 * exec: STALKER like DLTX Loader
   * [ ] Script to prepare FS for parsing (Decompress XDB, GAMMA standalone, ...)
-  * [ ] Support of mod_* files
 
 * exec: DLTX Linter
   * [ ] Why not ? Can be done by moving DLTXParser to the public API and tweeking it a bit.

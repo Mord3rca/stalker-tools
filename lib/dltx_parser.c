@@ -110,6 +110,8 @@ struct _DLTXParser_s {
 
 	DLTX_RETURN_CODE err;
 
+	bool is_parsing_modfile;
+
 	void (*on_new_line)(DLTXParser*, char[]);
 	void (*on_new_key)(DLTXParser*, char[], char[]);
 	void (*on_include_directive)(DLTXParser*, char[]);
@@ -265,9 +267,12 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 	dirname(dir);
 
 	// Not the pretiest but just "works"
-	if (glob(to, GLOB_PERIOD, NULL, &gl) != 0) {
-		DLTX_PARSER_LOG_ERR(root, "Globbing error");
+	i = glob(to, GLOB_PERIOD, NULL, &gl);
+	if (i != 0) {
+		if (i != GLOB_NOMATCH)
+			DLTX_PARSER_LOG_ERR(root, "Globbing error");
 		free(to);
+		free(dir);
 		return;
 	}
 
@@ -361,6 +366,8 @@ DLTXParser *dltx_create_parser() {
 	e->soverrides = dynarray_create(32);
 
 	e->err = NO_ERROR;
+
+	e->is_parsing_modfile = false;
 
 	e->on_new_key = dltx_parser_default_on_new_key;
 	e->on_new_line = dltx_parser_default_process_line;
@@ -495,6 +502,30 @@ void _dltx_apply_overrides(DLTXParser *root) {
 	_dltx_parser_evaluate_all(root);
 }
 
+static void _dltx_include_modfile(DLTXParser *root) {
+	char *file = NULL;
+	char *bname, *temp;
+	char glob[PATH_MAX] = {0};
+
+	if (root->is_parsing_modfile)
+		return; // Small guard to avoid modfile chaos
+
+	root->is_parsing_modfile = true;
+
+	file = strdup(root->cur_file_path);
+	bname = basename(file);
+	temp = strstr(bname, ".ltx");
+	if (temp)
+		*temp = 0;
+
+	snprintf(glob, PATH_MAX, "mod_%s_*.ltx", bname);
+
+	root->on_glob_include_directive(root, glob);
+
+	free(file);
+	root->is_parsing_modfile = false;
+}
+
 void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
 	char *cur = buffer;
 	char *end = buffer + buff_size;
@@ -522,6 +553,7 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 			break;
 		}
 	}
+	_dltx_include_modfile(root);
 }
 
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[]) {
