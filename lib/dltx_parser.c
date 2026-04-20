@@ -248,7 +248,7 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 
 	err = dltx_parser_process_file(root, to);
 	if (err != NO_ERROR)
-		DLTX_PARSER_LOG_ERR(root, "IO error");
+		DLTX_PARSER_LOG_ERR(root, "IO error while processing %s", to);
 #ifdef DLTX_TRACE
 	dynarray_insert(root->dltx->files, to);
 #else
