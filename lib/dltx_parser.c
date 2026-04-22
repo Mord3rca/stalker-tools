@@ -3,6 +3,7 @@
 #include <libgen.h>
 #include <limits.h>
 #include <regex.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,13 +11,6 @@
 
 #include "dltx_parser.h"
 #include "dynarray.h"
-
-#define DLTX_PARSER_LOG(file, format, ...) fprintf(file, "DLTX Parser - " format "\n", __VA_ARGS__)
-
-#define DLTX_PARSER_LOG_INFO(parser, format, ...) DLTX_PARSER_LOG(stderr, "INFO (in %s:%lu): " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
-#define DLTX_PARSER_LOG_WARN(parser, format, ...) DLTX_PARSER_LOG(stderr, "WARN (in %s:%lu): " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
-#define DLTX_PARSER_LOG_ERR(parser, format, ...)  DLTX_PARSER_LOG(stderr, "ERR (in %s:%lu):  " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
-#define DLTX_PARSER_LOG_DBG(parser, format, ...)  DLTX_PARSER_LOG(stderr, "DBG (in %s:%lu):  " format, parser->cur_file_path, parser->cur_line, ##__VA_ARGS__)
 
 const size_t dltx_parser_buffer_size = 256*1024;
 const size_t dltx_parser_max_inheritence = 8;
@@ -114,6 +108,7 @@ struct _DLTXParser_s {
 
 	bool is_parsing_modfile;
 
+	void (*on_error)(DLTXParser*, DLTX_RETURN_CODE, const char*, ...);
 	void (*on_new_line)(DLTXParser*, char[]);
 	void (*on_new_key)(DLTXParser*, char[], char[]);
 	void (*on_include_directive)(DLTXParser*, char[]);
@@ -170,7 +165,7 @@ static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) 
 
 	for(i = 0, str = inheritance; ; i++, str = NULL) {
 		if (i >= dltx_parser_max_inheritence) {
-			DLTX_PARSER_LOG_ERR(root, "TOO MUCH INHERITANCE ABORT");
+			root->on_error(root, EVAL_GENERIC_ERROR, "TOO MUCH INHERITANCE ABORT");
 			break;
 		}
 		token = strtok_r(str, ",", &saveptr);
@@ -186,8 +181,8 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 	DLTXSection *s = dltx_find_section(root->bases, name);
 
 	if (s != NULL) {
-		DLTX_PARSER_LOG_ERR(root, "Section [%s] exists and override flag is not set", name);
-		// Should error out
+		root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] exists and override flag is not set", name);
+		return;
 	}
 
 	s = dltx_create_new_section(root->bases, name);
@@ -221,7 +216,7 @@ void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char
 	DLTXSection *s = dltx_find_section(root->deletions, name);
 
 	if (s) {
-		DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion twice", name);
+		root->on_error(root, EVAL_GENERIC_ERROR, "Section [%s] was marked for deletion twice", name);
 		return;
 	}
 
@@ -230,7 +225,7 @@ void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char
 
 void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) {
 	if (root->cur_section == NULL) {
-		DLTX_PARSER_LOG_ERR(root, "Cannot insert key into null section");
+		root->on_error(root, PARSER_LOGIC_ERROR, "Cannot insert key into null section");
 		return;
 	}
 
@@ -250,7 +245,7 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 
 	err = dltx_parser_process_file(root, to);
 	if (err != NO_ERROR)
-		DLTX_PARSER_LOG_ERR(root, "IO error while processing %s", to);
+		root->on_error(root, FILE_READ_ERROR, "IO error while processing %s", to);
 #ifdef DLTX_TRACE
 	dynarray_insert(root->bases->files, to);
 #else
@@ -272,7 +267,7 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 	i = glob(to, GLOB_PERIOD, NULL, &gl);
 	if (i != 0) {
 		if (i != GLOB_NOMATCH)
-			DLTX_PARSER_LOG_ERR(root, "Globbing error");
+			root->on_error(root, FILE_READ_ERROR, "Globbing error on %s", path);
 		free(to);
 		free(dir);
 		return;
@@ -359,6 +354,17 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 	root->on_new_key(root, line, NULL);
 }
 
+void dltx_parser_default_on_error(DLTXParser *root, DLTX_RETURN_CODE err, const char *format, ...) {
+	va_list args;
+
+	fputs("DLTX Parser - ", stderr);
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+	fputs("\n", stderr);
+	root->err = err;
+}
+
 DLTXParser *dltx_create_parser() {
 	DLTXParser *e = malloc(sizeof(DLTXParser));
 
@@ -372,6 +378,7 @@ DLTXParser *dltx_create_parser() {
 
 	e->is_parsing_modfile = false;
 
+	e->on_error = dltx_parser_default_on_error;
 	e->on_new_key = dltx_parser_default_on_new_key;
 	e->on_new_line = dltx_parser_default_process_line;
 	e->on_new_section = dltx_parser_default_on_new_section;
@@ -396,10 +403,10 @@ static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXPars
 		!dltx_delete_section(root->bases, sect->name) ||
 		!dltx_delete_section(root->overrides, sect->name)
 	) {
-		DLTX_PARSER_LOG_WARN(root, "Section [%s] was marked for deletion but do not exist", sect->name);
+		root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] was marked for deletion but do not exist", sect->name);
 	}
 
-	return true;
+	return root->err == NO_ERROR;
 }
 
 static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root) {
@@ -447,8 +454,7 @@ static void _dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, D
 	for (inheritance = base->inheritance; inheritance && *inheritance; inheritance++) {
 		temp = dltx_find_section(root->bases, *inheritance);
 		if (!temp) {
-			root->err = MISSING_BASE;
-			DLTX_PARSER_LOG_ERR(root, "Section [%s] could not inherit %s", base->name, *inheritance);
+			root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] could not inherit %s", base->name, *inheritance);
 			return;
 		}
 		_dltx_update_some_keys(base, temp, immutable);
@@ -479,8 +485,7 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 			over = *override_cur;
 			result = strcmp(base->name, over->name);
 			if (result > 0) {
-				DLTX_PARSER_LOG_ERR(root, "Section [%s] don't override anything", over->name);
-				root->err = MISSING_BASE;
+				root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] don't override anything", over->name);
 				return;
 			} else if (result == 0) {
 				// Found it !
@@ -569,6 +574,9 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 			root->on_new_line(root, line);
 			break;
 		}
+
+		if (root->err != NO_ERROR)
+			return; // If an error occured during parsing, abort.
 	}
 	_dltx_include_modfile(root);
 }
@@ -628,7 +636,7 @@ DLTX_RETURN_CODE dltx_parser_parse_file(DLTX *dltx, const char filename[]) {
 }
 
 void dltx_parser_on_include_noop(DLTXParser *root, char path[]) {
-	DLTX_PARSER_LOG_WARN(root, "Inclusion from raw buffer are not yet supported");
+	root->on_error(root, FILE_READ_ERROR, "Inclusion from raw buffer are not yet supported");
 }
 
 DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buffer_size) {
