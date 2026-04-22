@@ -16,6 +16,10 @@ const char *dltx_return_code_to_str(DLTX_RETURN_CODE err) {
 		return "No error";
 		break;
 
+	case INIT_ERROR:
+		return "Failure to init";
+		break;
+
 	case FILE_READ_ERROR:
 		return "File read error, see errno for more info";
 		break;
@@ -24,12 +28,20 @@ const char *dltx_return_code_to_str(DLTX_RETURN_CODE err) {
 		return "File too big for buffer size";
 		break;
 
-	case INIT_ERROR:
-		return "Failure to init";
+	case PARSER_FORMAT_ERROR:
+		return "Error in file format";
 		break;
 
-	case MISSING_BASE:
-		return "An override section did not found its base";
+	case PARSER_LOGIC_ERROR:
+		return "logic error";
+		break;
+
+	case EVAL_GENERIC_ERROR:
+		return "Geniric error during EVAL stage";
+		break;
+
+	case EVAL_MISSING_SECTION:
+		return "A section definition is missing";
 		break;
 	default:
 		// Supposed to be dead code .... But we never know !
