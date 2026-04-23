@@ -10,11 +10,11 @@ void print_all_key(DLTXSection s, FILE *out) {
 		k = (DLTXKey*)s.keys->arr[i];
 #ifdef DLTX_TRACE
 		fprintf(
-			out, "%s = %s  ; Defined here %s:%lu\r\n",
-			k->name, k->value ? k->value : "", k->file, k->line
+			out, "%8s%-32s = %s  ; Defined here %s:%lu\r\n",
+			" ", k->name, k->value ? k->value : "", k->file, k->line
 		);
 #else
-		fprintf(out, "%s = %s\r\n", k->name, k->value ? k->value : "");
+		fprintf(out, "%8s%-32s = %s\r\n", " ", k->name, k->value ? k->value : "");
 #endif
 	}
 }
