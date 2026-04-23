@@ -94,6 +94,7 @@ struct _DLTXParser_s {
 	DLTX *output;
 
 	DLTX *bases;
+	DLTX *results;
 	DLTX *overrides;
 	DLTX *deletions;
 
@@ -369,6 +370,7 @@ DLTXParser *dltx_create_parser() {
 	DLTXParser *e = malloc(sizeof(DLTXParser));
 
 	e->bases = dltx_create();
+	e->results = dltx_create();
 	e->overrides = dltx_create();
 	e->deletions = dltx_create();
 
@@ -392,6 +394,7 @@ DLTXParser *dltx_create_parser() {
 
 void free_dltx_parser(DLTXParser *e) {
 	free_dltx(e->bases);
+	free_dltx(e->results);
 	free_dltx(e->overrides);
 	free_dltx(e->deletions);
 	free_dynarray(e->soverrides, NULL);
@@ -416,54 +419,56 @@ static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root)
 	return true;
 }
 
-static bool _is_in_immutable(const char name[], const char *immutable[]) {
-	const char **cur;
-
-	for (cur = immutable; cur && *cur; cur++)
-		if (strcmp(name, *cur) == 0)
-			return true;
-
-	return false;
+#ifdef DLTX_TRACE
+static bool _merge_files_array(char **obj, struct dynarray *dest) {
+	dynarray_insert(dest, *obj);
+	return true;
 }
+#endif
 
-DLTX_RETURN_CODE _dltx_update_some_keys(DLTXSection *dest, const DLTXSection *src, const char *immutable[]) {
-	DLTXKey **arr_cur = (DLTXKey**)src->keys->arr;
-	DLTXKey **arr_end = (DLTXKey**)src->keys->arr + src->keys->size;
-
-	for (; arr_cur < arr_end; arr_cur++) {
-		if (_is_in_immutable((*arr_cur)->name, immutable))
-			continue;
-
-		dltx_section_update_key(dest, *arr_cur);
-	}
-
-	return NO_ERROR;
-}
-
-static void _dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, DLTXSection *over) {
-	DLTXSection *temp;
+static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, DLTXSection *over, int depth) {
+	DLTXSection *result, *temp;
+	DLTXSection *nbase, *nover;
 	char **inheritance;
-	const char *immutable[base->keys->size+1];
 
-	immutable[base->keys->size] = 0;
-	for (size_t i = 0; i < base->keys->size; i++) {
-		immutable[i] = ((DLTXKey*)base->keys->arr[i])->name;
+	if (depth > 16) {
+		root->on_error(root, EVAL_GENERIC_ERROR, "Suspecting cycle deps for section [%s]", base->name);
+		return NULL;
 	}
+
+	result = dltx_find_section(root->results, base->name);
+	if (result)
+		return result;
+
+	result = dltx_create_section(base->name);
 
 	// Apply inheritance
 	for (inheritance = base->inheritance; inheritance && *inheritance; inheritance++) {
-		temp = dltx_find_section(root->bases, *inheritance);
+		temp = dltx_find_section(root->results, *inheritance);
 		if (!temp) {
-			root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] could not inherit %s", base->name, *inheritance);
-			return;
+			nbase = dltx_find_section(root->bases, *inheritance);
+			nover = dltx_find_section(root->overrides, *inheritance);
+
+			if (!nbase) {
+				root->on_error(root, EVAL_GENERIC_ERROR, "Section [%s] inherits from [%s] but does not exist... Creating missing base", base->name, *inheritance);
+				nbase = dltx_create_new_section(root->bases, *inheritance);
+				dltx_sort(root->bases);
+			}
+
+			temp = _dltx_parser_evaluate_section(root, nbase, nover, depth + 1);
 		}
-		_dltx_update_some_keys(base, temp, immutable);
+		dltx_section_update_keys(result, temp);
 	}
 
-	if (over)
-		dltx_section_update_keys(base, over);
+	dltx_section_update_keys(result, base);
 
-	dltx_section_sort(base);
+	// Apply override
+	if (over)
+		dltx_section_update_keys(result, over);
+
+	dltx_section_sort(result);
+	dynarray_insert(root->results->sections, result);
+	return result;
 }
 
 static void _dltx_parser_evaluate_all(DLTXParser *root) {
@@ -481,33 +486,50 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 	over = NULL;
 	for(base = *base_cur; base_cur < base_end; base=*(++base_cur), over=NULL) {
 		//find override
-		if (override_cur < override_end) {
+		for (;override_cur < override_end;) {
 			over = *override_cur;
 			result = strcmp(base->name, over->name);
 			if (result > 0) {
 				root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] don't override anything", over->name);
-				return;
+				override_cur++;
+				continue;
 			} else if (result == 0) {
 				// Found it !
 				override_cur++;
 			} else {
 				over = NULL;
 			}
+			break;
 		}
-		_dltx_parser_evaluate_section(root, base, over);
+
+		if (! _dltx_parser_evaluate_section(root, base, over, 0))
+			return;
+
+		if (root->err != NO_ERROR)
+			return;
+	}
+
+	for (; override_cur < override_end; override_cur++) {
+		root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] don't override anything", (*override_cur)->name);
 	}
 
 	// Apply resolution to output
+	dltx_sort(root->results);
 	// TODO: Merge instead of replacing
 	free_dynarray(root->output->sections, (void (*)(void*))free_dltx_section);
-	root->output->sections = root->bases->sections;
-	root->bases->sections = dynarray_create(1);
+	root->output->sections = root->results->sections;
+	root->results->sections = dynarray_create(1);
 
 	root->output->flags = root->bases->flags;
 
 #ifdef DLTX_TRACE
-	root->output->files = root->bases->files; // TODO: Merge if not null
-	root->bases->files = NULL;
+	if (root->output->files) {
+		dynarray_foreach(root->results->files, (void*)root->output->files, (bool (*)(void*, void*))&_merge_files_array);
+		free_dynarray(root->results->files, NULL);
+	} else {
+		root->output->files = root->results->files;
+	}
+	root->results->files = dynarray_create(1);
 #endif
 }
 
