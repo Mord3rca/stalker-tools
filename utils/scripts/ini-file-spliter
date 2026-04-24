@@ -1,0 +1,22 @@
+#!/bin/bash
+
+[ -v V ] && set -x
+
+set -eu
+
+# Cleanup
+rm -rf ./*.split || true
+rm -f ./*.sections || true
+
+for i in *.ini; do
+	sfile="${i/.ini}.sections"
+	sdir="${i/.ini}.split"
+
+	grep '^\[' "${i}" >"${sfile}"
+
+	mkdir "${sdir}"
+	(
+		cd "${sdir}" || exit 1
+		csplit "../${i}" '/^\[.*\]/' '{*}' >/dev/null
+	)
+done
