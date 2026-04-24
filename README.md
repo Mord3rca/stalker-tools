@@ -39,8 +39,8 @@ Here a list of shit to do for this is usefull:
   * [ ] Create a LUA LS Def. file for XRay Monolith LUA Engine
   * [ ] Document it ... Cauz' reading engine's code to create a mod was annoying.
 
-* exec: STALKER like DLTX Loader
-  * [ ] Script to prepare FS for parsing (Decompress XDB, GAMMA standalone, ...)
+* script: STALKER like DLTX Loader extractor
+  * [x] Prepare FS for parsing (Decompress XDB, GAMMA standalone, ...)
 
 * exec: DLTX Linter
   * [ ] Why not ? Can be done by moving DLTXParser to the public API and tweeking it a bit.

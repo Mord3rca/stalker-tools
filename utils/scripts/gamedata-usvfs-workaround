@@ -1,0 +1,41 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+[ -v V ] && set -x
+
+if [ ! "${#}" -ge 2 ]; then
+	echo "Usage: ${0} <path/to/anomaly> <path/to/gamma> [<path/to/target>]" >&2
+	exit 1
+fi
+
+anomaly_dir="${1}"
+gamma_dir="${2}"
+dest_dir="${3:-$(mktemp --directory --tmpdir dltx-read-XXXXXX)}"
+
+mkdir -p "${dest_dir}"/{gamedata,extract}
+trap 'rm -rf "${dest_dir}/extract"' EXIT
+
+# Preparing config folder
+while read -r mod; do
+	[[ "${mod}" == +* ]] || continue
+
+	mod="${mod%%[[:cntrl:]]}"
+	[ -d "${gamma_dir}/mods/${mod#+}/gamedata/configs" ] || continue
+
+	cp -a "${gamma_dir}/mods/${mod#+}/gamedata/configs" "${dest_dir}/gamedata"
+done < <(tac "${gamma_dir}/profiles/G.A.M.M.A/modlist.txt")
+
+(
+	cd "${anomaly_dir}" || exit 1
+
+	for db in db/configs/*.db0; do
+		wine tools/converter.exe -xdb "${db}" -dir "${dest_dir}/extract"
+	done &>/dev/null
+)
+cp -r --update=none "${dest_dir}/extract/configs"/* "${dest_dir}/gamedata/configs"
+
+# Fix inclusion to be lowercase
+find "${dest_dir}/gamedata/configs/" -name '*.ltx' -exec sed -i 's/#include ".*"/\L&/g' {} \;
+
+echo "Config ready in: ${dest_dir}/gamedata/configs/system.ltx"
