@@ -379,6 +379,13 @@ void dltx_set_readonly(DLTX *root, bool ro) {
 		root->flags &= ~DLTX_READONLY;
 }
 
+void dltx_set_strict_mode(DLTX *root, bool strict) {
+	if (strict)
+		root->flags |= DLTX_STRICT;
+	else
+		root->flags &= ~DLTX_STRICT;
+}
+
 static int _dltx_section_name_cmp(const DLTXSection **a, const DLTXSection **b) {
        return strcmp((*a)->name, (*b)->name);
 }

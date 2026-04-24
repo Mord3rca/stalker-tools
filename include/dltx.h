@@ -3,8 +3,9 @@
 
 #include "dynarray.h"
 
-#define DLTX_READONLY 1 << 0
-#define DLTX_SORTED   1 << 1
+#define DLTX_READONLY	1 << 0
+#define DLTX_SORTED	1 << 1
+#define DLTX_STRICT	1 << 2
 
 typedef enum {
 	NO_ERROR = 0,
@@ -104,6 +105,7 @@ DLTXSection *dltx_create_new_section(DLTX*, const char[]);
 bool dltx_delete_section(DLTX*, const char[]);
 
 void dltx_set_readonly(DLTX*, bool);
+void dltx_set_strict_mode(DLTX*, bool);
 
 void dltx_sort(DLTX*);
 
