@@ -30,8 +30,10 @@ Here a list of shit to do for this is usefull:
   * [x] Support for section delete
   * [x] Support for key without value (= may not be present)
   * [x] Support of mod_* files
-  * [ ] Better error report
+  * [x] Better error report
   * [x] Trace support
+  * [ ] Support for variable deletion
+  * [ ] Support for list var (del. member, add. member & formating)
 
 * utils: Modding LUA definition file
   * [ ] Create a LUA LS Def. file for XRay Monolith LUA Engine
