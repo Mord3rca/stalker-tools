@@ -428,7 +428,7 @@ static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root)
 
 #ifdef DLTX_TRACE
 static bool _merge_files_array(char **obj, struct dynarray *dest) {
-	dynarray_insert(dest, *obj);
+	dynarray_insert(dest, obj);
 	return true;
 }
 #endif
@@ -480,6 +480,10 @@ static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection 
 	if (over)
 		dltx_section_update_keys(result, over);
 
+#ifdef DLTX_TRACE
+	result->file = base->file;
+	result->line = base->line;
+#endif
 	dltx_section_sort(result);
 	dynarray_insert(root->results->sections, result);
 	return result;
@@ -543,10 +547,11 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 	root->output->flags = root->bases->flags;
 
 #ifdef DLTX_TRACE
-	if (root->output->files) {
-		dynarray_foreach(root->results->files, (void*)root->output->files, (bool (*)(void*, void*))&_merge_files_array);
+	if (root->output->files->size > 0) {
+		dynarray_foreach(root->results->files, (bool (*)(void*, void*))&_merge_files_array, root->output->files);
 		free_dynarray(root->results->files, NULL);
 	} else {
+		free_dynarray(root->output->files, NULL);
 		root->output->files = root->results->files;
 	}
 	root->results->files = dynarray_create(1);
@@ -647,7 +652,7 @@ DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filenam
 	reader->cur_file_path = strdup(filename);
 	reader->cur_line = 1;
 #ifdef DLTX_TRACE
-	dynarray_insert(reader->bases->files, reader->cur_file_path);
+	dynarray_insert(reader->results->files, reader->cur_file_path);
 #endif
 	// Processing loop
 	_dltx_parser_process_buffer(reader, buffer, dltx_parser_buffer_size);
@@ -696,7 +701,7 @@ DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buff
 	reader->cur_line = 1;
 #ifdef DLTX_TRACE
 	// TODO: Can be dupped in case of multiple call of dltx_parser_parse_buffer
-	dynarray_insert(reader->bases->files, reader->cur_file_path);
+	dynarray_insert(reader->results->files, reader->cur_file_path);
 #endif
 
 	_dltx_parser_process_buffer(reader, buffer, buffer_size);
