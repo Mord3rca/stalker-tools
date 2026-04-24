@@ -410,7 +410,10 @@ static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXPars
 		!dltx_delete_section(root->bases, sect->name) ||
 		!dltx_delete_section(root->overrides, sect->name)
 	) {
-		root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] was marked for deletion but do not exist", sect->name);
+		root->on_error(root,
+			(root->output->flags & DLTX_STRICT) ? EVAL_MISSING_SECTION : NO_ERROR,
+			"Section [%s] was marked for deletion but do not exist", sect->name
+		);
 	}
 
 	return root->err == NO_ERROR;
@@ -454,9 +457,16 @@ static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection 
 			nover = dltx_find_section(root->overrides, *inheritance);
 
 			if (!nbase) {
-				root->on_error(root, EVAL_GENERIC_ERROR, "Section [%s] inherits from [%s] but does not exist... Creating missing base", base->name, *inheritance);
-				nbase = dltx_create_new_section(root->bases, *inheritance);
-				dltx_sort(root->bases);
+				root->on_error(root,
+					(root->output->flags & DLTX_STRICT) ? EVAL_GENERIC_ERROR : NO_ERROR,
+					"Section [%s] inherits from [%s] but does not exist...", base->name, *inheritance
+				);
+				if (!nover) {
+					nbase = dltx_create_new_section(root->bases, *inheritance);
+					dltx_sort(root->bases);
+				} else {
+					nbase = nover; // Silently use override as base since it is defined
+				}
 			}
 
 			temp = _dltx_parser_evaluate_section(root, nbase, nover, depth + 1);
@@ -494,7 +504,10 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 			over = *override_cur;
 			result = strcmp(base->name, over->name);
 			if (result > 0) {
-				root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] don't override anything", over->name);
+				root->on_error(root,
+					(root->output->flags & DLTX_STRICT) ? EVAL_MISSING_SECTION : NO_ERROR,
+					"Section [%s] don't override anything", over->name
+				);
 				override_cur++;
 				continue;
 			} else if (result == 0) {
@@ -514,7 +527,10 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 	}
 
 	for (; override_cur < override_end; override_cur++) {
-		root->on_error(root, EVAL_MISSING_SECTION, "Section [%s] don't override anything", (*override_cur)->name);
+		root->on_error(root,
+			(root->output->flags & DLTX_STRICT) ? EVAL_MISSING_SECTION : NO_ERROR,
+			"Section [%s] don't override anything", (*override_cur)->name
+		);
 	}
 
 	// Apply resolution to output
