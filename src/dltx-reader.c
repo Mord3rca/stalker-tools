@@ -14,7 +14,10 @@ void print_all_key(DLTXSection s, FILE *out) {
 			" ", k->name, k->value ? k->value : "", k->file, k->line
 		);
 #else
-		fprintf(out, "%8s%-32s = %s\r\n", " ", k->name, k->value ? k->value : "");
+		if (k->value && *(k->value) != 0)
+			fprintf(out, "%8s%-32s = %s\r\n", " ", k->name, k->value);
+		else
+			fprintf(out, "%8s%-32s =\r\n", " ", k->name);
 #endif
 	}
 }
@@ -28,7 +31,7 @@ void write_section(DLTXSection s, FILE *out) {
 	fprintf(out, "[%s]\r\n", s.name);
 #endif
 	print_all_key(s, out);
-	fprintf(out, "\n");
+	fprintf(out, " \r\n");
 }
 
 int main(int argc, char *argv[]) {
