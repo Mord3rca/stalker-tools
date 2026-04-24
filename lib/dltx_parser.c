@@ -17,7 +17,7 @@ const size_t dltx_parser_max_inheritence = 8;
 
 const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
 const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
-const char dltx_section_regex_pattern[] = "([!@]{,2})\\[([[:graph:]]*)\\](:([[:graph:]]*))?";
+const char dltx_section_regex_pattern[] = "([!@]{,2})\\[([[:graph:]]*)\\](:([0-9A-Za-z ,_]*))?";
 
 regex_t dltx_key_regex;
 regex_t dltx_include_regex;
@@ -171,6 +171,10 @@ static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) 
 		}
 		token = strtok_r(str, ",", &saveptr);
 		if (token == NULL)
+			break;
+
+		token = _strip(token);
+		if (!token)
 			break;
 
 		ar[i] = strdup(token);
