@@ -10,7 +10,7 @@ void print_all_key(DLTXSection s, FILE *out) {
 		k = (DLTXKey*)s.keys->arr[i];
 #ifdef DLTX_TRACE
 		fprintf(
-			out, "%8s%-32s = %s  ; Defined here %s:%lu\r\n",
+			out, "%8s%-32s = %-32s  ; Defined here %s:%lu\r\n",
 			" ", k->name, k->value ? k->value : "", k->file, k->line
 		);
 #else
@@ -26,7 +26,7 @@ void write_section(DLTXSection s, FILE *out) {
 	if (out == NULL)
 		out = stdout;
 #ifdef DLTX_TRACE
-	fprintf(out, "[%s]  ; Defined here %s:%lu\r\n", s.name, s.file, s.line);
+	fprintf(out, "[%s]%-72s; Defined here %s:%lu\r\n", s.name, " ", s.file, s.line);
 #else
 	fprintf(out, "[%s]\r\n", s.name);
 #endif
