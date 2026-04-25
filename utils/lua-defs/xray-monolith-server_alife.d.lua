@@ -1,13 +1,5 @@
 ---@meta
 
--- Exported in src\xrServerEntities\xrServer_Objects_ALife_script.cpp
-
----@class cse_alife_schedulable
-cse_alife_schedulable = {}
-
----@class cse_alife_dynamic_object
-cse_alife_dynamic_object = {}
-
 -- Exported in src\xrServerEntities\xrServer_Objects_ALife_Items_script.cpp
 
 ---@class cse_alife_inventory_item
@@ -170,3 +162,95 @@ function cse_alife_human_abstract:set_rank() end
 
 ---@class cse_alife_psydog_phantom
 cse_alife_psydog_phantom = {}
+
+-- Exported in src\xrServerEntities\xrServer_Objects_ALife_script.cpp
+
+---@class ipure_schedulable_object
+ipure_schedulable_object = {}
+
+---@class cse_alife_schedulable
+cse_alife_schedulable = {}
+
+---@class cse_alife_graph_point
+cse_alife_graph_point = {}
+
+---@class cse_alife_object
+---@field online boolean
+---@field m_level_vertex_id number
+---@field m_game_vertex_id number
+---@field m_story_id number
+cse_alife_object = {}
+
+function cse_alife_object:move_offline() end
+function cse_alife_object:move_offline() end
+function cse_alife_object:visible_for_map() end
+function cse_alife_object:visible_for_map() end
+function cse_alife_object:can_switch_online() end
+function cse_alife_object:can_switch_offline() end
+function cse_alife_object:use_ai_locations() end
+
+---@class cse_alife_group_abstract
+cse_alife_group_abstract = {}
+
+---@class cse_alife_dynamic_object
+cse_alife_dynamic_object = {}
+
+---@class cse_alife_dynamic_object_visual
+cse_alife_dynamic_object_visual = {}
+
+---@class cse_alife_ph_skeleton_object
+cse_alife_ph_skeleton_object = {}
+
+---@class cse_alife_space_restrictor
+cse_alife_space_restrictor = {}
+
+---@class cse_alife_level_changer
+cse_alife_level_changer = {}
+
+---@class cse_alife_inventory_box
+cse_alife_inventory_box = {}
+
+-- Exported in src\xrServerEntities\xrServer_Objects_ALife_script2.cpp
+
+---@class cse_alife_object_projector
+cse_alife_object_projector = {}
+
+---@class cse_alife_helicopter
+cse_alife_helicopter = {}
+
+---@class cse_alife_car
+cse_alife_car = {}
+
+---@class cse_alife_stmgun
+cse_alife_stmgun = {}
+
+function cse_alife_stmgun:get_ammo_magsize() end
+function cse_alife_stmgun:set_ammo_elapsed() end
+function cse_alife_stmgun:get_ammo_elapsed() end
+function cse_alife_stmgun:get_ammo_type() end
+function cse_alife_stmgun:set_ammo_type() end
+
+---@class cse_alife_object_breakable
+cse_alife_object_breakable = {}
+
+---@class cse_alife_object_climable
+cse_alife_object_climable = {}
+
+---@class cse_alife_mounted_weapon
+cse_alife_mounted_weapon = {}
+
+---@class cse_alife_team_base_zone
+cse_alife_team_base_zone = {}
+
+-- Exported in src\xrServerEntities\xrServer_Objects_ALife_script3.cpp
+
+---@class cse_alife_object_hanging_lamp
+cse_alife_object_hanging_lamp = {}
+
+---@class cse_alife_object_physic
+cse_alife_object_physic = {}
+
+function cse_alife_object_physic:set_yaw() end
+
+---@class cse_alife_smart_zone
+cse_alife_smart_zone = {}

@@ -196,9 +196,9 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script4.cpp
 * [x] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script2.cpp
 * [x] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script.cpp
-* [ ] src/xrServerEntities/xrServer_Objects_ALife_script2.cpp
-* [ ] src/xrServerEntities/xrServer_Objects_ALife_script3.cpp
-* [ ] src/xrServerEntities/xrServer_Objects_ALife_script.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_script2.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_script3.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_script.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_Alife_Smartcovers_script.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_script2.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_script.cpp
