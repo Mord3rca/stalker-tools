@@ -44,49 +44,44 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/alife_monster_patrol_path_manager_script.cpp
 * [x] src/xrGame/alife_simulator_script.cpp
 * [x] src/xrGame/alife_smart_terrain_task_script.cpp
-* [ ] src/xrGame/antirad_script.cpp
-* [ ] src/xrGame/artefact_script.cpp
+* [x] src/xrGame/antirad_script.cpp
+* [x] src/xrGame/artefact_script.cpp
 * [x] src/xrGame/base_client_classes_script.cpp
-* [ ] src/xrGame/BottleItem_script.cpp
+* [x] src/xrGame/BottleItem_script.cpp
 * [ ] src/xrGame/CarScript.cpp
 * [ ] src/xrGame/client_spawn_manager_script.cpp
 * [x] src/xrGame/console_registrator_script.cpp
 * [ ] src/xrGame/cover_point_script.cpp
-* [ ] src/xrGame/CustomOutfit_script.cpp
-* [ ] src/xrGame/CustomZone_script.cpp
+* [x] src/xrGame/CustomOutfit_script.cpp
+* [x] src/xrGame/CustomZone_script.cpp
 * [ ] src/xrGame/DemoInfo.cpp
-* [ ] src/xrGame/eatable_item_script.cpp
+* [x] src/xrGame/eatable_item_script.cpp
 * [ ] src/xrGame/ef_storage_script.cpp
 * [ ] src/xrGame/ExplosiveScript.cpp
-* [ ] src/xrGame/F1.cpp
-* [ ] src/xrGame/FoodItem_script.cpp
+* [x] src/xrGame/F1.cpp
+* [x] src/xrGame/FoodItem_script.cpp
 * [ ] src/xrGame/fs_registrator_script.cpp
 * [ ] src/xrGame/game_graph_script.cpp
 * [ ] src/xrGame/GameTask_script.cpp
-* [ ] src/xrGame/HairsZone_script.cpp
-* [ ] src/xrGame/HangingLamp.cpp
-* [ ] src/xrGame/helicopter_script.cpp
+* [x] src/xrGame/HairsZone_script.cpp
+* [x] src/xrGame/HangingLamp.cpp
+* [x] src/xrGame/helicopter_script.cpp
 * [ ] src/xrGame/holder_custom_script.cpp
-* [ ] src/xrGame/HudItem.cpp
-* [ ] src/xrGame/HUDManager.cpp
-* [ ] src/xrGame/HUDTarget.cpp
-* [ ] src/xrGame/InventoryBox_script.cpp
+* [x] src/xrGame/InventoryBox_script.cpp
 * [ ] src/xrGame/inventory_item_script.cpp
 * [ ] src/xrGame/InventoryOwner_script.cpp
 * [ ] src/xrGame/level_script.cpp
 * [ ] src/xrGame/login_manager_script.cpp
-* [ ] src/xrGame/medkit_script.cpp
+* [x] src/xrGame/medkit_script.cpp
 * [ ] src/xrGame/memory_space_script.cpp
-* [ ] src/xrGame/mincer_script.cpp
-* [ ] src/xrGame/Missile.cpp
-* [ ] src/xrGame/mixed_delegate.h
-* [ ] src/xrGame/MosquitoBald_script.cpp
+* [x] src/xrGame/mincer_script.cpp
+* [x] src/xrGame/Missile.cpp
+* [x] src/xrGame/MosquitoBald_script.cpp
 * [ ] src/xrGame/particle_params_script.cpp
-* [ ] src/xrGame/patrol_path_manager.cpp
 * [ ] src/xrGame/patrol_path_params_script.cpp
 * [ ] src/xrGame/PhraseDialog_script.cpp
 * [ ] src/xrGame/PHSimpleCallsScript.cpp
-* [ ] src/xrGame/PhysicObject_script.cpp
+* [x] src/xrGame/PhysicObject_script.cpp
 * [ ] src/xrGame/physics_element_scripted.cpp
 * [ ] src/xrGame/physics_joint_scripted.cpp
 * [ ] src/xrGame/physics_shell_scripted.cpp
@@ -96,17 +91,15 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/profile_store_script.cpp
 * [x] src/xrGame/property_evaluator_script.cpp
 * [x] src/xrGame/property_storage_script.cpp
-* [ ] src/xrGame/relation_registry_fights.cpp
-* [ ] src/xrGame/RGD5.cpp
+* [x] src/xrGame/RGD5.cpp
 * [ ] src/xrGame/saved_game_wrapper_script.cpp
-* [ ] src/xrGame/Scope.cpp
+* [x] src/xrGame/Scope.cpp
 * [ ] src/xrGame/script_action_condition_script.cpp
 * [ ] src/xrGame/script_animation_action_script.cpp
 * [ ] src/xrGame/script_attachment_script.cpp
 * [ ] src/xrGame/script_binder_object_script.cpp
 * [ ] src/xrGame/script_effector_script.cpp
 * [ ] src/xrGame/script_entity_action_script.cpp
-* [ ] src/xrGame/script_game_object3.cpp
 * [ ] src/xrGame/script_game_object_script2.cpp
 * [ ] src/xrGame/script_game_object_script3.cpp
 * [ ] src/xrGame/script_game_object_script.cpp
@@ -136,9 +129,8 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/smart_cover_object_script.cpp
 * [ ] src/xrGame/space_restriction_bridge.cpp
 * [ ] src/xrGame/space_restrictor_script.cpp
-* [ ] src/xrGame/StalkerOutfit.cpp
-* [ ] src/xrGame/torch_script.cpp
-* [ ] src/xrGame/trade_parameters_inline.h
+* [x] src/xrGame/StalkerOutfit.cpp
+* [x] src/xrGame/torch_script.cpp
 * [ ] src/xrGame/ui_export_script.cpp
 * [ ] src/xrGame/UIGameCustom_script.cpp
 * [ ] src/xrGame/ui/UIActorMenu_script.cpp
