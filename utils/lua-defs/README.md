@@ -18,8 +18,8 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/action_base_script.cpp
 * [x] src/xrGame/action_planner_action_script.cpp
 * [x] src/xrGame/action_planner_script.cpp
-* [ ] src/xrGame/ActorCondition_script.cpp
-* [ ] src/xrGame/actor_script.cpp
+* [x] src/xrGame/ActorCondition_script.cpp
+* [x] src/xrGame/actor_script.cpp
 * [x] src/xrGame/ai_crow_script.cpp
 * [x] src/xrGame/ai/monsters/bloodsucker/bloodsucker_script.cpp
 * [x] src/xrGame/ai/monsters/boar/boar_script.cpp
