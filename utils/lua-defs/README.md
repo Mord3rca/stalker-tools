@@ -15,9 +15,9 @@ List of files containing a LUA register which need a def file:
 * [ ] src/Layers/xrRenderDX10/dx10ResourceManager_Scripting.cpp
 * [ ] src/Layers/xrRender/ResourceManager_Scripting.cpp
 * [x] src/xrGame/account_manager_script.cpp
-* [ ] src/xrGame/action_base_script.cpp
-* [ ] src/xrGame/action_planner_action_script.cpp
-* [ ] src/xrGame/action_planner_script.cpp
+* [x] src/xrGame/action_base_script.cpp
+* [x] src/xrGame/action_planner_action_script.cpp
+* [x] src/xrGame/action_planner_script.cpp
 * [ ] src/xrGame/ActorCondition_script.cpp
 * [ ] src/xrGame/actor_script.cpp
 * [x] src/xrGame/ai_crow_script.cpp
