@@ -178,19 +178,17 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/WeaponVal.cpp
 * [x] src/xrGame/WeaponVintorez.cpp
 * [x] src/xrGame/WeaponWalther.cpp
-* [ ] src/xrServerEntities/doug_lea_memory_allocator.c
-* [ ] src/xrServerEntities/object_factory_script.cpp
-* [ ] src/xrServerEntities/script_engine_script.cpp
-* [ ] src/xrServerEntities/script_export_macroses.h
+* [x] src/xrServerEntities/object_factory_script.cpp
+* [x] src/xrServerEntities/script_engine_script.cpp
 * [x] src/xrServerEntities/script_fcolor_script.cpp
-* [ ] src/xrServerEntities/script_flags_script.cpp
-* [ ] src/xrServerEntities/script_fmatrix_script.cpp
+* [x] src/xrServerEntities/script_flags_script.cpp
+* [x] src/xrServerEntities/script_fmatrix_script.cpp
 * [x] src/xrServerEntities/script_fvector_script.cpp
 * [x] src/xrServerEntities/script_ini_file_script.cpp
 * [x] src/xrServerEntities/script_net_packet_script.cpp
-* [ ] src/xrServerEntities/script_reader_script.cpp
-* [ ] src/xrServerEntities/script_rtoken_list_script.cpp
-* [ ] src/xrServerEntities/script_token_list_script.cpp
+* [x] src/xrServerEntities/script_reader_script.cpp
+* [x] src/xrServerEntities/script_rtoken_list_script.cpp
+* [x] src/xrServerEntities/script_token_list_script.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_ALife_Items_script.cpp
 * [ ] src/xrServerEntities/xrserver_objects_alife_monsters_script3.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script4.cpp
