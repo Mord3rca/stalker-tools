@@ -189,10 +189,13 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrServerEntities/script_reader_script.cpp
 * [x] src/xrServerEntities/script_rtoken_list_script.cpp
 * [x] src/xrServerEntities/script_token_list_script.cpp
-* [ ] src/xrServerEntities/xrServer_Objects_ALife_Items_script.cpp
-* [ ] src/xrServerEntities/xrserver_objects_alife_monsters_script3.cpp
-* [ ] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script4.cpp
-* [ ] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_Items_script.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_Items_script2.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_Items_script3.cpp
+* [x] src/xrServerEntities/xrserver_objects_alife_monsters_script3.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script4.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script2.cpp
+* [x] src/xrServerEntities/xrServer_Objects_ALife_Monsters_script.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_ALife_script2.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_ALife_script3.cpp
 * [ ] src/xrServerEntities/xrServer_Objects_ALife_script.cpp
