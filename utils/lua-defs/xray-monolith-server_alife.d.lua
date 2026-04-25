@@ -254,3 +254,12 @@ function cse_alife_object_physic:set_yaw() end
 
 ---@class cse_alife_smart_zone
 cse_alife_smart_zone = {}
+
+-- Exported in src\xrServerEntities\xrServer_Objects_Alife_Smartcovers_script.cpp
+
+---@class cse_smart_cover
+cse_smart_cover = {}
+
+function cse_smart_cover:description() end
+function cse_smart_cover:set_available_loopholes() end
+function cse_smart_cover:set_loopholes_table_checker() end
