@@ -94,8 +94,8 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/player_hud_script.cpp
 * [ ] src/xrGame/profile_data_types_script.cpp
 * [ ] src/xrGame/profile_store_script.cpp
-* [ ] src/xrGame/property_evaluator_script.cpp
-* [ ] src/xrGame/property_storage_script.cpp
+* [x] src/xrGame/property_evaluator_script.cpp
+* [x] src/xrGame/property_storage_script.cpp
 * [ ] src/xrGame/relation_registry_fights.cpp
 * [ ] src/xrGame/RGD5.cpp
 * [ ] src/xrGame/saved_game_wrapper_script.cpp
