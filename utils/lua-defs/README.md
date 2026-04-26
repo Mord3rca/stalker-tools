@@ -106,7 +106,7 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/script_game_object_script.cpp
 * [ ] src/xrGame/script_game_object_script_trader.cpp
 * [x] src/xrGame/script_hit_script.cpp
-* [ ] src/xrGame/script_imgui_script.cpp
+* [x] src/xrGame/script_imgui_script.cpp
 * [x] src/xrGame/script_lanim.cpp
 * [x] src/xrGame/script_light_script.cpp
 * [x] src/xrGame/script_monster_action_script.cpp
