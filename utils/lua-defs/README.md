@@ -130,23 +130,23 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/space_restrictor_script.cpp
 * [x] src/xrGame/StalkerOutfit.cpp
 * [x] src/xrGame/torch_script.cpp
-* [ ] src/xrGame/ui_export_script.cpp
-* [ ] src/xrGame/UIGameCustom_script.cpp
-* [ ] src/xrGame/ui/UIActorMenu_script.cpp
-* [ ] src/xrGame/ui/UIButton_script.cpp
-* [ ] src/xrGame/ui/UIComboBox_script.cpp
-* [ ] src/xrGame/ui/UIEditBox_script.cpp
-* [ ] src/xrGame/ui/UIListBox_script.cpp
-* [ ] src/xrGame/ui/UIMapInfo_script.cpp
-* [ ] src/xrGame/ui/UIMessageBox_script.cpp
-* [ ] src/xrGame/ui/UIOptionsManagerScript.cpp
-* [ ] src/xrGame/ui/UIProgressBar_script.cpp
-* [ ] src/xrGame/ui/UIPropertiesBox_script.cpp
+* [x] src/xrGame/ui_export_script.cpp
+* [x] src/xrGame/UIGameCustom_script.cpp
+* [x] src/xrGame/ui/UIActorMenu_script.cpp
+* [x] src/xrGame/ui/UIButton_script.cpp
+* [x] src/xrGame/ui/UIComboBox_script.cpp
+* [x] src/xrGame/ui/UIEditBox_script.cpp
+* [x] src/xrGame/ui/UIListBox_script.cpp
+* [x] src/xrGame/ui/UIMapInfo_script.cpp
+* [x] src/xrGame/ui/UIMessageBox_script.cpp
+* [x] src/xrGame/ui/UIOptionsManagerScript.cpp
+* [x] src/xrGame/ui/UIProgressBar_script.cpp
+* [x] src/xrGame/ui/UIPropertiesBox_script.cpp
 * [x] src/xrGame/ui/uiscriptwnd_script2.cpp
 * [x] src/xrGame/ui/UIScriptWnd_script.cpp
-* [ ] src/xrGame/ui/UIStatic_script.cpp
-* [ ] src/xrGame/ui/UITabControl_script.cpp
-* [ ] src/xrGame/ui/UIWindow_script.cpp
+* [x] src/xrGame/ui/UIStatic_script.cpp
+* [x] src/xrGame/ui/UITabControl_script.cpp
+* [x] src/xrGame/ui/UIWindow_script.cpp
 * [x] src/xrGame/WeaponAK74.cpp
 * [x] src/xrGame/WeaponAmmo_script.cpp
 * [x] src/xrGame/WeaponBinoculars_script.cpp
