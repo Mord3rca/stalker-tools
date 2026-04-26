@@ -540,17 +540,16 @@ static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection 
 static void _dltx_parser_evaluate_all(DLTXParser *root) {
 	int result;
 	DLTXSection *base, *over;
-	DLTXSection **base_cur, **base_end;
+	DLTXSection **base_cur;
 	DLTXSection **override_cur, **override_end;
 
 	base_cur = (DLTXSection**)root->bases->sections->arr;
-	base_end = base_cur + root->bases->sections->size;
 
 	override_cur = (DLTXSection**)root->overrides->sections->arr;
 	override_end = override_cur + root->overrides->sections->size;
 
 	over = NULL;
-	for(base = *base_cur; base_cur < base_end; base=*(++base_cur), over=NULL) {
+	for(base = *base_cur; base_cur < (DLTXSection**)(root->bases->sections->arr + root->bases->sections->size); base=*(++base_cur), over=NULL) {
 		//find override
 		for (;override_cur < override_end;) {
 			over = *override_cur;
