@@ -1203,3 +1203,721 @@ function CSavedGameWrapper:level_name() end
 function CSavedGameWrapper:actor_health() end
 
 function valid_saved_game() end
+
+-- Exported in src\xrGame\script_action_condition_script.cpp
+
+---@class cond
+cond = {}
+
+---@enum cond.cond
+cond.cond = {
+    move_end = 0,
+    look_end = 1,
+    anim_end = 2,
+    sound_end = 3,
+    object_end = 4,
+    time_end = 5,
+    act_end = 6
+}  -- TODO: Check values
+
+-- Exported in src\xrGame\script_animation_action_script.cpp
+
+---@class anim
+anim = {}
+
+---@enum anim.type
+anim.type = {
+    free = 0,
+    danger = 1,
+    panic = 2
+}  -- TODO: Check values
+
+---@enum anim.monster
+anim.monster = {
+    stand_idle = 0,
+    capture_prepare = 1,
+    sit_idle = 2,
+    lie_idle = 3,
+    eat = 4,
+    sleep = 5,
+    rest = 6,
+    attack = 7,
+    look_around = 8,
+    turn = 9
+}  -- TODO: Check values
+
+function anim:type() end
+function anim:monster() end
+function anim:completed() end
+
+-- Exported in src\xrGame\script_attachment_script.cpp
+
+---@class script_attachment_type
+script_attachment_type = {}
+
+---@enum script_attachment_type.script_attachment_type
+script_attachment_type.script_attachment_type = {
+    Hud = 0,
+    World = 1,
+    CamAttached = 2
+}  -- TODO: Check values
+
+---@class ScriptAttachment
+ScriptAttachment = {}
+
+function ScriptAttachment:set_parent() end
+function ScriptAttachment:set_parent() end
+function ScriptAttachment:set_parent_level() end
+function ScriptAttachment:get_parent() end
+function ScriptAttachment:add_attachment() end
+function ScriptAttachment:get_attachment() end
+function ScriptAttachment:remove_attachment() end
+function ScriptAttachment:remove_attachment() end
+function ScriptAttachment:iterate_attachments() end
+function ScriptAttachment:set_position() end
+function ScriptAttachment:set_position() end
+function ScriptAttachment:get_position() end
+function ScriptAttachment:set_rotation() end
+function ScriptAttachment:set_rotation() end
+function ScriptAttachment:get_rotation() end
+function ScriptAttachment:set_origin() end
+function ScriptAttachment:set_origin() end
+function ScriptAttachment:get_origin() end
+function ScriptAttachment:set_scale() end
+function ScriptAttachment:set_scale() end
+function ScriptAttachment:set_scale() end
+function ScriptAttachment:get_scale() end
+function ScriptAttachment:get_transform() end
+function ScriptAttachment:get_center() end
+function ScriptAttachment:bone_id() end
+function ScriptAttachment:bone_name() end
+function ScriptAttachment:bone_visible() end
+function ScriptAttachment:bone_visible() end
+function ScriptAttachment:set_bone_visible() end
+function ScriptAttachment:set_bone_visible() end
+function ScriptAttachment:bone_transform() end
+function ScriptAttachment:bone_transform() end
+function ScriptAttachment:bone_position() end
+function ScriptAttachment:bone_position() end
+function ScriptAttachment:bone_direction() end
+function ScriptAttachment:bone_direction() end
+function ScriptAttachment:bone_parent() end
+function ScriptAttachment:bone_parent() end
+function ScriptAttachment:set_parent_bone() end
+function ScriptAttachment:set_parent_bone() end
+function ScriptAttachment:get_parent_bone() end
+function ScriptAttachment:list_bones() end
+function ScriptAttachment:bone_callback() end
+function ScriptAttachment:bone_callback() end
+function ScriptAttachment:bone_callback() end
+function ScriptAttachment:bone_callback() end
+function ScriptAttachment:bone_callback() end
+function ScriptAttachment:bone_callback() end
+function ScriptAttachment:remove_bone_callback() end
+function ScriptAttachment:remove_bone_callback() end
+function ScriptAttachment:set_type() end
+function ScriptAttachment:get_type() end
+function ScriptAttachment:set_model() end
+function ScriptAttachment:get_model() end
+function ScriptAttachment:set_name() end
+function ScriptAttachment:get_name() end
+function ScriptAttachment:play_motion() end
+function ScriptAttachment:set_ui() end
+function ScriptAttachment:get_ui() end
+function ScriptAttachment:set_ui_bone() end
+function ScriptAttachment:set_ui_bone() end
+function ScriptAttachment:get_ui_bone() end
+function ScriptAttachment:set_ui_position() end
+function ScriptAttachment:set_ui_position() end
+function ScriptAttachment:get_ui_position() end
+function ScriptAttachment:set_ui_rotation() end
+function ScriptAttachment:set_ui_rotation() end
+function ScriptAttachment:get_ui_rotation() end
+function ScriptAttachment:set_ui_scale() end
+function ScriptAttachment:set_ui_scale() end
+function ScriptAttachment:get_ui_scale() end
+function ScriptAttachment:set_ui_origin() end
+function ScriptAttachment:set_ui_origin() end
+function ScriptAttachment:get_ui_origin() end
+function ScriptAttachment:attach_light() end
+function ScriptAttachment:detach_light() end
+function ScriptAttachment:get_light() end
+function ScriptAttachment:set_light_bone() end
+function ScriptAttachment:set_light_bone() end
+function ScriptAttachment:get_light_bone() end
+function ScriptAttachment:get_shaders() end
+function ScriptAttachment:get_default_shaders() end
+function ScriptAttachment:set_shader() end
+function ScriptAttachment:reset_shader() end
+function ScriptAttachment:userdata() end
+
+-- Exported in src\xrGame\script_binder_object_script.cpp
+
+---@class object_binder
+---@field object any readonly
+object_binder = {}
+
+function object_binder:reinit() end
+function object_binder:reload() end
+function object_binder:net_spawn() end
+function object_binder:net_destroy() end
+function object_binder:net_import() end
+function object_binder:net_export() end
+function object_binder:update() end
+function object_binder:save() end
+function object_binder:load() end
+function object_binder:net_save_relevant() end
+function object_binder:net_Relcase() end
+
+-- Exported in src\xrGame\script_effector_script.cpp
+
+---@class duality
+---@field h any
+---@field v any
+duality = {}
+
+function duality:set() end
+
+---@class color
+---@field r any
+---@field g any
+---@field b any
+color = {}
+
+function color:set() end
+
+---@class noise
+---@field intensity any
+---@field grain any
+---@field fps any
+noise = {}
+
+function noise:set() end
+
+---@class effector_params
+---@field blur any
+---@field gray any
+---@field dual any
+---@field noise any
+---@field color_base any
+---@field color_gray any
+---@field color_add any
+effector_params = {}
+
+function effector_params:assign() end
+
+---@class effector
+effector = {}
+
+function effector:start() end
+function effector:finish() end
+function effector:process() end
+
+-- Exported in src\xrGame\script_entity_action_script.cpp
+
+---@class entity_action
+entity_action = {}
+
+function entity_action:set_action() end
+function entity_action:set_action() end
+function entity_action:set_action() end
+function entity_action:set_action() end
+function entity_action:set_action() end
+function entity_action:set_action() end
+function entity_action:set_action() end
+function entity_action:set_action() end
+function entity_action:move() end
+function entity_action:look() end
+function entity_action:anim() end
+function entity_action:sound() end
+function entity_action:particle() end
+function entity_action:object() end
+function entity_action:time() end
+function entity_action:all() end
+function entity_action:completed() end
+
+-- Exported in src\xrGame\script_hit_script.cpp
+
+---@class hit
+---@field power any
+---@field direction any
+---@field draftsman any
+---@field impulse any
+---@field type any
+---@field weapon_id any
+---@field bullet_id any readonly
+---@field bone any
+hit = {}
+
+---@enum hit.hit_type
+hit.hit_type = {
+    burn = 0,
+    shock = 1,
+    strike = 2,
+    wound = 3,
+    radiation = 4,
+    telepatic = 5,
+    chemical_burn = 6,
+    explosion = 7,
+    fire_wound = 8,
+    light_burn = 9,
+    dummy = 10
+}  -- TODO: Check values
+
+function hit:bone() end
+
+-- Exported in src\xrGame\script_lanim.cpp
+
+---@class color_animator
+color_animator = {}
+
+function color_animator:load() end
+function color_animator:calculate() end
+function color_animator:length() end
+
+-- Exported in src\xrGame\script_light_script.cpp
+
+---@class script_light
+---@field color any
+---@field texture any
+---@field enabled any
+---@field type any
+---@field range any
+---@field shadow any
+---@field lanim any
+---@field lanim_brightness any
+---@field volumetric any
+---@field volumetric_quality any
+---@field volumetric_distance any
+---@field volumetric_intensity any
+---@field hud_mode any
+script_light = {}
+
+function script_light:set_position() end
+function script_light:set_position() end
+function script_light:set_direction() end
+function script_light:set_direction() end
+function script_light:set_direction() end
+function script_light:set_cone() end
+function script_light:update() end
+
+---@class attachment_script_light
+attachment_script_light = {}
+
+function attachment_script_light:set_position() end
+function attachment_script_light:set_position() end
+function attachment_script_light:set_direction() end
+function attachment_script_light:set_direction() end
+function attachment_script_light:set_direction() end
+
+---@class script_glow
+---@field enabled any
+---@field texture any
+---@field range any
+---@field color any
+---@field lanim any
+---@field lanim_brightness any
+script_glow = {}
+
+function script_glow:set_position() end
+function script_glow:set_position() end
+function script_glow:set_direction() end
+function script_glow:set_direction() end
+
+-- Exported in src\xrGame\script_monster_action_script.cpp
+
+---@class act
+act = {}
+
+---@enum act.type
+act.type = {
+    rest = 0,
+    eat = 1,
+    attack = 2,
+    panic = 3
+}  -- TODO: Check Values
+
+-- Exported in src\xrGame\script_monster_hit_info_script.cpp
+
+---@class MonsterHitInfo
+---@field who any
+---@field direction any
+---@field time any
+
+---@class MonsterSpace
+MonsterSpace = {}
+
+---@enum MonsterSpace.sounds
+MonsterSpace.sounds = {
+    sound_script = 0
+}  -- TODO: Check Values
+
+---@enum MonsterSpace.head_anim
+MonsterSpace.head_anim = {
+    head_anim_normal = 0,
+    head_anim_angry = 1,
+    head_anim_glad = 2,
+    head_anim_kind = 3
+}  -- TODO: Check Values
+
+-- Exported in src\xrGame\script_movement_action_script.cpp
+
+---@class move
+move = {}
+
+---@enum move.body
+move.body = {
+    crouch = 0,
+    standing = 1
+}
+
+---@enum move.move
+move.move = {
+    walk = 0,
+    run = 1,
+    stand = 2
+}
+
+---@enum move.path
+move.path = {
+    line = 0,
+    dodge = 1,
+    criteria = 2,
+    curve = 3,
+    curve_criteria = 4
+}
+
+---@enum move.input
+move.input = {
+    none = 0,
+    fwd = 1,
+    back = 2,
+    left = 3,
+    right = 4,
+    up = 5,
+    down = 6,
+    handbrake = 7,
+    on = 8,
+    off = 9
+}
+
+---@enum move.monster
+move.monster = {
+    walk_fwd = 0,
+    walk_bkwd = 1,
+    run_fwd = 2,
+    drag = 3,
+    jump = 4,
+    steal = 5,
+    walk_with_leader = 6,
+    run_with_leader = 7
+}
+
+---@enum move.monster_speed_param
+move.monster_speed_param = {
+    default = 0,
+    force = 1
+}
+
+function move:body() end
+function move:move() end
+function move:path() end
+function move:object() end
+function move:patrol() end
+function move:position() end
+function move:input() end
+function move:completed() end
+
+-- Exported in src\xrGame\script_object_action_script.cpp
+
+---@class object
+object = {}
+
+---@enum object.state
+object.state = {
+    idle = 0,
+    show = 1,
+    hide = 2,
+    take = 3,
+    drop = 4,
+    strap = 5,
+    aim1 = 6,
+    aim2 = 7,
+    reload = 8,
+    reload1 = 9,
+    reload2 = 10,
+    fire1 = 11,
+    fire2 = 12,
+    switch1 = 13,
+    switch2 = 14,
+    activate = 15,
+    deactivate = 16,
+    use = 17,
+    turn_on = 18,
+    turn_off = 19,
+    dummy = 20
+}
+
+function object:action() end
+function object:object() end
+function object:object() end
+function object:completed() end
+
+-- Exported in src\xrGame\script_particle_action_script.cpp
+
+---@class particle
+particle = {}
+
+function particle:set_particle() end
+function particle:set_bone() end
+function particle:set_position() end
+function particle:set_angles() end
+function particle:set_velocity() end
+function particle:completed() end
+
+-- Exported in src\xrGame\script_particles_script.cpp
+
+---@class particles_object
+particles_object = {}
+
+function particles_object:play() end
+function particles_object:play_at_pos() end
+function particles_object:stop() end
+function particles_object:stop_deffered() end
+function particles_object:playing() end
+function particles_object:looped() end
+function particles_object:move_to() end
+function particles_object:set_position() end
+function particles_object:set_direction() end
+function particles_object:set_orientation() end
+function particles_object:set_hud_mode() end
+function particles_object:last_position() end
+function particles_object:load_path() end
+function particles_object:start_path() end
+function particles_object:stop_path() end
+function particles_object:pause_path() end
+
+-- Exported in src\xrGame\script_render_device_script.cpp
+
+---@class render_device
+----@field width any readonly
+----@field height any readonly
+----@field time_delta any readonly
+----@field f_time_delta any readonly
+----@field cam_pos any readonly
+----@field cam_dir any readonly
+----@field cam_top any readonly
+----@field cam_right any readonly
+----@field fov any readonly
+----@field aspect_ration any readonly
+----@field precache_frame any readonly
+----@field frame any readonly
+render_device = {}
+
+function render_device:time_global() end
+function render_device:time_continual() end
+function render_device:is_paused() end
+function render_device:pause() end
+function render_device:pause_ex() end
+
+function app_ready() end
+
+-- Exported in src\xrGame\script_sound_action_script.cpp
+
+--- @class sound
+sound = {}
+
+---@enum sound.type
+sound.type = {
+    idle = 0,
+    eat = 1,
+    attack = 2,
+    attack_hit = 3,
+    take_damage = 4,
+    die = 5,
+    threaten = 6,
+    steal = 7,
+    panic = 8
+}
+
+function sound:set_sound() end
+function sound:set_sound() end
+function sound:set_sound_type() end
+function sound:set_bone() end
+function sound:set_position() end
+function sound:set_angles() end
+function sound:completed() end
+
+-- Exported in src\xrGame\script_sound_info_script.cpp
+
+---@class SoundInfo
+---@field who any
+---@field danger any
+---@field position any
+---@field power any
+---@field time any
+
+-- Exported in src\xrGame\script_sound_script.cpp
+
+---@class sound_params
+---@field position any
+---@field volume any
+---@field frequency any
+---@field min_distance any
+---@field max_distance any
+
+---@class sound_object
+---@field frequency any
+---@field min_distance any
+---@field max_distance any
+---@field volume any
+---@field position any
+sound_object = {}
+
+---@enum sound_object.sound_play_type
+sound_object.sound_play_type = {
+    looped = 1,
+    s2d = 2,
+    s3d = 0
+}
+
+function sound_object:get_position() end
+function sound_object:set_position() end
+function sound_object:play() end
+function sound_object:play() end
+function sound_object:play() end
+function sound_object:play_at_pos() end
+function sound_object:play_at_pos() end
+function sound_object:play_at_pos() end
+function sound_object:play_no_feedback() end
+function sound_object:stop() end
+function sound_object:stop_deffered() end
+function sound_object:playing() end
+function sound_object:length() end
+function sound_object:attach_tail() end
+
+-- Exported in src\xrGame\script_wallmarks_script.cpp
+
+---@class ScriptWallmarksManager
+ScriptWallmarksManager = {}
+
+function ScriptWallmarksManager:place() end
+function ScriptWallmarksManager:place() end
+function ScriptWallmarksManager:place() end
+function ScriptWallmarksManager:place_skeleton() end
+
+function wallmarks_manager() end
+
+-- Exported in src\xrGame\script_watch_action_script.cpp
+
+---@class look
+look = {}
+
+---@enum look.look
+look.look = {
+    path_dir = 0,
+    search = 1,
+    danger = 2,
+    point = 3,
+    fire_point = 4,
+    cur_dir = 5,
+    direction = 6
+}
+
+function look:object() end
+function look:direct() end
+function look:type() end
+function look:bone() end
+function look:completed() end
+
+-- Exported in src\xrGame\script_world_property_script.cpp
+
+---@class world_property
+world_property = {}
+
+function world_property:condition() end
+function world_property:value() end
+
+-- Exported in src\xrGame\script_world_state_script.cpp
+
+---@class world_state
+world_state = {}
+
+function world_state:add_property() end
+function world_state:remove_property() end
+function world_state:clear() end
+function world_state:includes() end
+function world_state:property() end
+
+-- Exported in src\xrGame\ScriptXMLInit.cpp
+
+---@class CScriptXmlInit
+CScriptXmlInit = {}
+
+function CScriptXmlInit:ParseFile() end
+function CScriptXmlInit:ParseDirFile() end
+function CScriptXmlInit:NodeExist() end
+function CScriptXmlInit:GetNodesNum() end
+function CScriptXmlInit:NavigateToNode() end
+function CScriptXmlInit:NavigateToNode_ByAttribute() end
+function CScriptXmlInit:NavigateToNode_ByPath() end
+function CScriptXmlInit:NavigateToRoot() end
+function CScriptXmlInit:ReadValue() end
+function CScriptXmlInit:ReadAttribute() end
+function CScriptXmlInit:InitWindow() end
+function CScriptXmlInit:InitHint() end
+function CScriptXmlInit:InitFrame() end
+function CScriptXmlInit:InitFrameLine() end
+function CScriptXmlInit:InitEditBox() end
+function CScriptXmlInit:InitStatic() end
+function CScriptXmlInit:InitTextWnd() end
+function CScriptXmlInit:InitAnimStatic() end
+function CScriptXmlInit:InitSleepStatic() end
+function CScriptXmlInit:Init3tButton() end
+function CScriptXmlInit:InitCheck() end
+function CScriptXmlInit:InitSpinNum() end
+function CScriptXmlInit:InitSpinFlt() end
+function CScriptXmlInit:InitSpinText() end
+function CScriptXmlInit:InitComboBox() end
+function CScriptXmlInit:InitTab() end
+function CScriptXmlInit:InitServerList() end
+function CScriptXmlInit:InitMapList() end
+function CScriptXmlInit:InitMapInfo() end
+function CScriptXmlInit:InitTrackBar() end
+function CScriptXmlInit:InitCDkey() end
+function CScriptXmlInit:InitMPPlayerName() end
+function CScriptXmlInit:InitKeyBinding() end
+function CScriptXmlInit:InitMMShniaga() end
+function CScriptXmlInit:InitScrollView() end
+function CScriptXmlInit:InitListBox() end
+function CScriptXmlInit:InitProgressBar() end
+
+-- Exported in src\xrGame\script_zone_script.cpp
+
+---@class ce_script_zone
+---@class ce_smart_zone
+
+-- Exported in src\xrGame\searchlight_script.cpp
+
+---@class CProjector
+CProjector = {}
+
+---@enum CProjector.projector_enum
+CProjector.projector_enum = {
+    eActive = 0,
+    eSwitch = 1,
+    eDesiredPos = 2,
+    eDesiredDir = 3,
+    eDesiredAng = 4
+}
+
+function CProjector:Action() end
+function CProjector:SetParam() end
+
+-- Exported in src\xrGame\smart_cover_object_script.cpp
+
+---@class smart_cover_object
+
+-- Exported in src\xrGame\space_restrictor_script.cpp
+
+---@class CSpaceRestrictor

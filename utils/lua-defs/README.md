@@ -95,42 +95,39 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/RGD5.cpp
 * [x] src/xrGame/saved_game_wrapper_script.cpp
 * [x] src/xrGame/Scope.cpp
-* [ ] src/xrGame/script_action_condition_script.cpp
-* [ ] src/xrGame/script_animation_action_script.cpp
-* [ ] src/xrGame/script_attachment_script.cpp
-* [ ] src/xrGame/script_binder_object_script.cpp
-* [ ] src/xrGame/script_effector_script.cpp
-* [ ] src/xrGame/script_entity_action_script.cpp
+* [x] src/xrGame/script_action_condition_script.cpp
+* [x] src/xrGame/script_animation_action_script.cpp
+* [x] src/xrGame/script_attachment_script.cpp
+* [x] src/xrGame/script_binder_object_script.cpp
+* [x] src/xrGame/script_effector_script.cpp
+* [x] src/xrGame/script_entity_action_script.cpp
 * [ ] src/xrGame/script_game_object_script2.cpp
 * [ ] src/xrGame/script_game_object_script3.cpp
 * [ ] src/xrGame/script_game_object_script.cpp
 * [ ] src/xrGame/script_game_object_script_trader.cpp
-* [ ] src/xrGame/script_hit_script.cpp
+* [x] src/xrGame/script_hit_script.cpp
 * [ ] src/xrGame/script_imgui_script.cpp
-* [ ] src/xrGame/script_lanim.cpp
-* [ ] src/xrGame/script_light_script.cpp
-* [ ] src/xrGame/script_monster_action_script.cpp
-* [ ] src/xrGame/script_monster_hit_info_script.cpp
-* [ ] src/xrGame/script_movement_action_script.cpp
-* [ ] src/xrGame/script_object_action_script.cpp
-* [ ] src/xrGame/script_particle_action_script.cpp
-* [ ] src/xrGame/script_particles_script.cpp
-* [ ] src/xrGame/script_render_device_script.cpp
-* [ ] src/xrGame/script_sound_action_script.cpp
-* [ ] src/xrGame/script_sound_info_script.cpp
-* [ ] src/xrGame/script_sound_script.cpp
-* [ ] src/xrGame/script_wallmarks_script.cpp
-* [ ] src/xrGame/script_watch_action_script.cpp
-* [ ] src/xrGame/script_world_property_script.cpp
-* [ ] src/xrGame/script_world_state_script.cpp
-* [ ] src/xrGame/ScriptXMLInit.cpp
-* [ ] src/xrGame/script_zone_script.cpp
-* [ ] src/xrGame/searchlight_script.cpp
-* [ ] src/xrGame/smart_cover_default_behaviour_planner.cpp
-* [ ] src/xrGame/smart_cover_evaluators.cpp
-* [ ] src/xrGame/smart_cover_object_script.cpp
-* [ ] src/xrGame/space_restriction_bridge.cpp
-* [ ] src/xrGame/space_restrictor_script.cpp
+* [x] src/xrGame/script_lanim.cpp
+* [x] src/xrGame/script_light_script.cpp
+* [x] src/xrGame/script_monster_action_script.cpp
+* [x] src/xrGame/script_monster_hit_info_script.cpp
+* [x] src/xrGame/script_movement_action_script.cpp
+* [x] src/xrGame/script_object_action_script.cpp
+* [x] src/xrGame/script_particle_action_script.cpp
+* [x] src/xrGame/script_particles_script.cpp
+* [x] src/xrGame/script_render_device_script.cpp
+* [x] src/xrGame/script_sound_action_script.cpp
+* [x] src/xrGame/script_sound_info_script.cpp
+* [x] src/xrGame/script_sound_script.cpp
+* [x] src/xrGame/script_wallmarks_script.cpp
+* [x] src/xrGame/script_watch_action_script.cpp
+* [x] src/xrGame/script_world_property_script.cpp
+* [x] src/xrGame/script_world_state_script.cpp
+* [x] src/xrGame/ScriptXMLInit.cpp
+* [x] src/xrGame/script_zone_script.cpp
+* [x] src/xrGame/searchlight_script.cpp
+* [x] src/xrGame/smart_cover_object_script.cpp
+* [x] src/xrGame/space_restrictor_script.cpp
 * [x] src/xrGame/StalkerOutfit.cpp
 * [x] src/xrGame/torch_script.cpp
 * [ ] src/xrGame/ui_export_script.cpp
