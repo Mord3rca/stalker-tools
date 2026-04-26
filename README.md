@@ -32,7 +32,7 @@ Here a list of shit to do for this is usefull:
   * [x] Support of mod_* files
   * [x] Better error report
   * [x] Trace support
-  * [ ] Support for variable deletion
+  * [x] Support for variable deletion
   * [ ] Support for list var (del. member, add. member & formating)
 
 * utils: Modding LUA definition file

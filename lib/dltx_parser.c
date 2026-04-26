@@ -221,11 +221,41 @@ void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char
 	DLTXSection *s = dltx_find_section(root->deletions, name);
 
 	if (s) {
-		root->on_error(root, EVAL_GENERIC_ERROR, "Section [%s] was marked for deletion twice", name);
+		if (s->keys->size == 0 ) {
+			root->on_error(root, EVAL_GENERIC_ERROR, "Section [%s] was marked for deletion twice", name);
+			return;
+		}
+
+		dltx_section_drop_all_keys(s);
 		return;
 	}
 
 	dltx_create_new_section(root->deletions, name);
+}
+
+static void _dltx_parser_on_delete_key(DLTXParser *root, char key[], char value[]) {
+	DLTXSection *s = dltx_find_section(root->deletions, root->cur_section->name);
+
+	if (!s) {
+		s = dltx_create_new_section(root->deletions, root->cur_section->name);
+		dltx_section_set_key(s, key + 1, NULL);
+		return;
+	}
+
+	if (s->keys->size == 0)
+		return;  // All section marked for deletions, nothing to do
+
+	dltx_section_set_key(s, key + 1, NULL);
+}
+
+static void _dltx_parser_on_new_key(DLTXParser *root, char key[], char value[]) {
+	dltx_section_set_key(root->cur_section, key, value);
+
+#ifdef DLTX_TRACE
+	DLTXKey *k = dltx_section_get_key(root->cur_section, key);
+	k->file = root->cur_file_path;
+	k->line = root->cur_line;
+#endif
 }
 
 void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) {
@@ -234,12 +264,7 @@ void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) 
 		return;
 	}
 
-	dltx_section_set_key(root->cur_section, key, value);
-#ifdef DLTX_TRACE
-	DLTXKey *k = dltx_section_get_key(root->cur_section, key);
-	k->file = root->cur_file_path;
-	k->line = root->cur_line;
-#endif
+	(key[0] == '!' ? _dltx_parser_on_delete_key : _dltx_parser_on_new_key)(root, key, value);
 }
 
 void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
@@ -405,16 +430,39 @@ void free_dltx_parser(DLTXParser *e) {
 	free(e);
 }
 
+static bool _per_var_deletion(DLTXKey *key, DLTXSection *s) {
+	dltx_section_del_key(s, key->name);
+	return true;
+}
+
 static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXParser *root) {
-	if (
-		!dltx_delete_section(root->bases, sect->name) ||
-		!dltx_delete_section(root->overrides, sect->name)
-	) {
-		root->on_error(root,
-			(root->output->flags & DLTX_STRICT) ? EVAL_MISSING_SECTION : NO_ERROR,
-			"Section [%s] was marked for deletion but do not exist", sect->name
-		);
+	DLTXSection *f;
+
+	// Full deletion case
+	if (sect->keys->size == 0) {
+		if (
+			!dltx_delete_section(root->bases, sect->name) ||
+			!dltx_delete_section(root->overrides, sect->name)
+		) {
+			root->on_error(root,
+				(root->output->flags & DLTX_STRICT) ? EVAL_MISSING_SECTION : NO_ERROR,
+				"Section [%s] was marked for deletion but do not exist", sect->name
+			);
+		}
+		return root->err == NO_ERROR;
 	}
+
+	// per veriable deletion
+	f = dltx_find_section(root->bases, sect->name);
+	if (f) {
+		dynarray_foreach(sect->keys, (bool (*)(void*, void*))&_per_var_deletion, (void*)f);
+	}
+
+	f = dltx_find_section(root->overrides, sect->name);
+	if (f) {
+		dynarray_foreach(sect->keys, (bool (*)(void*, void*))&_per_var_deletion, (void*)f);
+	}
+	// TODO: Error management if key does not exist at all
 
 	return root->err == NO_ERROR;
 }
