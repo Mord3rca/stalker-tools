@@ -17,6 +17,7 @@ mkdir -p "${dest_dir}"/{gamedata,extract}
 trap 'rm -rf "${dest_dir}/extract"' EXIT
 
 # Preparing config folder
+cp -a "${anomaly_dir}/gamedata/configs/" "${dest_dir}/gamedata"
 while read -r mod; do
 	[[ "${mod}" == +* ]] || continue
 
