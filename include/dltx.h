@@ -82,6 +82,8 @@ DLTXKey *dltx_section_get_key(DLTXSection*, const char[]);
 DLTX_RETURN_CODE dltx_section_set_key(DLTXSection*, const char[], const char[]);
 DLTX_RETURN_CODE dltx_section_del_key(DLTXSection*, const char[]);
 
+DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection*);
+
 DLTX_RETURN_CODE dltx_section_update_key(DLTXSection*, const DLTXKey*);
 
 DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection*, const DLTXSection*);

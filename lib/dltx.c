@@ -200,6 +200,16 @@ DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[]) {
 	return NO_ERROR;
 }
 
+DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection *sec) {
+	if (sec->keys->size == 0)
+		return NO_ERROR;
+
+	free_dynarray(sec->keys, (void (*)(void*))&free_dltx_key);
+	sec->keys = dynarray_create(1);
+
+	return NO_ERROR;
+}
+
 DLTX_RETURN_CODE dltx_section_update_key(DLTXSection *section, const DLTXKey *src) {
 	DLTXKey *dest = dltx_section_get_key(section, src->name);
 
