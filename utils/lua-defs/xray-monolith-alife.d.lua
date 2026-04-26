@@ -1,5 +1,9 @@
 ---@meta
 
+-- Exported in src\xrGame\alife_human_brain_script.cpp
+
+---@class CALifeHumanBrain
+
 -- Exported in src\xrGame\alife_monster_brain_script.cpp
 ---@class CALifeMonsterBrain
 CALifeMonsterBrain = {}

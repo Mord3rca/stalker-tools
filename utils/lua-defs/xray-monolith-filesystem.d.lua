@@ -1,6 +1,6 @@
 ---@meta
 
--- Exported classes from src/xrGame/fs_registrator_script.cpp
+-- Exported classes from src\xrGame\fs_registrator_script.cpp
 
 ---@class FS_item
 FS_item = {}
