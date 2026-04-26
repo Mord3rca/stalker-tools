@@ -47,53 +47,53 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/artefact_script.cpp
 * [x] src/xrGame/base_client_classes_script.cpp
 * [x] src/xrGame/BottleItem_script.cpp
-* [ ] src/xrGame/CarScript.cpp
-* [ ] src/xrGame/client_spawn_manager_script.cpp
+* [x] src/xrGame/CarScript.cpp
+* [x] src/xrGame/client_spawn_manager_script.cpp
 * [x] src/xrGame/console_registrator_script.cpp
-* [ ] src/xrGame/cover_point_script.cpp
+* [x] src/xrGame/cover_point_script.cpp
 * [x] src/xrGame/CustomOutfit_script.cpp
 * [x] src/xrGame/CustomZone_script.cpp
-* [ ] src/xrGame/DemoInfo.cpp
+* [x] src/xrGame/DemoInfo.cpp
 * [x] src/xrGame/eatable_item_script.cpp
-* [ ] src/xrGame/ef_storage_script.cpp
-* [ ] src/xrGame/ExplosiveScript.cpp
+* [x] src/xrGame/ef_storage_script.cpp
+* [x] src/xrGame/ExplosiveScript.cpp
 * [x] src/xrGame/F1.cpp
 * [x] src/xrGame/FoodItem_script.cpp
 * [x] src/xrGame/fs_registrator_script.cpp
-* [ ] src/xrGame/game_cl_single.cpp
-* [ ] src/xrGame/game_graph_script.cpp
-* [ ] src/xrGame/GameTask_script.cpp
+* [x] src/xrGame/game_cl_single.cpp
+* [x] src/xrGame/game_graph_script.cpp
+* [x] src/xrGame/GameTask_script.cpp
 * [x] src/xrGame/HairsZone_script.cpp
 * [x] src/xrGame/HangingLamp.cpp
 * [x] src/xrGame/helicopter_script.cpp
-* [ ] src/xrGame/holder_custom_script.cpp
+* [x] src/xrGame/holder_custom_script.cpp
 * [x] src/xrGame/InventoryBox_script.cpp
-* [ ] src/xrGame/inventory_item_script.cpp
-* [ ] src/xrGame/InventoryOwner_script.cpp
-* [ ] src/xrGame/key_binding_registrator_script.cpp
-* [ ] src/xrGame/level_script.cpp
-* [ ] src/xrGame/login_manager_script.cpp
+* [x] src/xrGame/inventory_item_script.cpp
+* [x] src/xrGame/InventoryOwner_script.cpp
+* [x] src/xrGame/key_binding_registrator_script.cpp
+* [x] src/xrGame/level_script.cpp
+* [x] src/xrGame/login_manager_script.cpp
 * [x] src/xrGame/medkit_script.cpp
-* [ ] src/xrGame/memory_space_script.cpp
+* [x] src/xrGame/memory_space_script.cpp
 * [x] src/xrGame/mincer_script.cpp
 * [x] src/xrGame/Missile.cpp
 * [x] src/xrGame/MosquitoBald_script.cpp
-* [ ] src/xrGame/particle_params_script.cpp
-* [ ] src/xrGame/patrol_path_params_script.cpp
-* [ ] src/xrGame/PhraseDialog_script.cpp
-* [ ] src/xrGame/PHSimpleCallsScript.cpp
+* [x] src/xrGame/particle_params_script.cpp
+* [x] src/xrGame/patrol_path_params_script.cpp
+* [x] src/xrGame/PhraseDialog_script.cpp
+* [x] src/xrGame/PHSimpleCallsScript.cpp
 * [x] src/xrGame/PhysicObject_script.cpp
-* [ ] src/xrGame/physics_element_scripted.cpp
-* [ ] src/xrGame/physics_joint_scripted.cpp
-* [ ] src/xrGame/physics_shell_scripted.cpp
-* [ ] src/xrGame/physics_world_scripted.cpp
-* [ ] src/xrGame/player_hud_script.cpp
-* [ ] src/xrGame/profile_data_types_script.cpp
-* [ ] src/xrGame/profile_store_script.cpp
+* [x] src/xrGame/physics_element_scripted.cpp
+* [x] src/xrGame/physics_joint_scripted.cpp
+* [x] src/xrGame/physics_shell_scripted.cpp
+* [x] src/xrGame/physics_world_scripted.cpp
+* [x] src/xrGame/player_hud_script.cpp
+* [x] src/xrGame/profile_data_types_script.cpp
+* [x] src/xrGame/profile_store_script.cpp
 * [x] src/xrGame/property_evaluator_script.cpp
 * [x] src/xrGame/property_storage_script.cpp
 * [x] src/xrGame/RGD5.cpp
-* [ ] src/xrGame/saved_game_wrapper_script.cpp
+* [x] src/xrGame/saved_game_wrapper_script.cpp
 * [x] src/xrGame/Scope.cpp
 * [ ] src/xrGame/script_action_condition_script.cpp
 * [ ] src/xrGame/script_animation_action_script.cpp
