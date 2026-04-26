@@ -36,7 +36,7 @@ Here a list of shit to do for this is usefull:
   * [ ] Support for list var (del. member, add. member & formating)
 
 * utils: Modding LUA definition file
-  * [ ] Create a LUA LS Def. file for XRay Monolith LUA Engine
+  * [x] Create a LUA LS Def. file for XRay Monolith LUA Engine
   * [ ] Document it ... Cauz' reading engine's code to create a mod was annoying.
 
 * script: STALKER like DLTX Loader extractor
