@@ -56,10 +56,10 @@ function CALifeMonsterMovementManager:detail() end
 ---@return CALifeMonsterPatrolPathManager
 function CALifeMonsterMovementManager:patrol() end
 
----@return EPathType
+---@return game_object.EPathType
 function CALifeMonsterMovementManager:path_type() end
 
----@return EPathType
+---@return game_object.EPathType
 function CALifeMonsterMovementManager:path_type() end
 
 ---@return boolean
