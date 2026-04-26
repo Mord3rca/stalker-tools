@@ -12,8 +12,6 @@ Add this folder to your `workspace.library` configuration key in addon settings 
 
 List of files containing a LUA register which need a def file:
 
-* [ ] src/Layers/xrRenderDX10/dx10ResourceManager_Scripting.cpp
-* [ ] src/Layers/xrRender/ResourceManager_Scripting.cpp
 * [x] src/xrGame/account_manager_script.cpp
 * [x] src/xrGame/action_base_script.cpp
 * [x] src/xrGame/action_planner_action_script.cpp
@@ -38,6 +36,7 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/ai/monsters/zombie/zombie_script.cpp
 * [x] src/xrGame/ai/stalker/ai_stalker_script.cpp
 * [x] src/xrGame/ai/trader/ai_trader_script.cpp
+* [ ] src/xrGame/alife_human_brain_script.cpp
 * [x] src/xrGame/alife_monster_brain_script.cpp
 * [x] src/xrGame/alife_monster_detail_path_manager_script.cpp
 * [x] src/xrGame/alife_monster_movement_manager_script.cpp
@@ -61,6 +60,7 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/F1.cpp
 * [x] src/xrGame/FoodItem_script.cpp
 * [ ] src/xrGame/fs_registrator_script.cpp
+* [ ] src/xrGame/game_cl_single.cpp
 * [ ] src/xrGame/game_graph_script.cpp
 * [ ] src/xrGame/GameTask_script.cpp
 * [x] src/xrGame/HairsZone_script.cpp
@@ -70,6 +70,7 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrGame/InventoryBox_script.cpp
 * [ ] src/xrGame/inventory_item_script.cpp
 * [ ] src/xrGame/InventoryOwner_script.cpp
+* [ ] src/xrGame/key_binding_registrator_script.cpp
 * [ ] src/xrGame/level_script.cpp
 * [ ] src/xrGame/login_manager_script.cpp
 * [x] src/xrGame/medkit_script.cpp
@@ -105,6 +106,7 @@ List of files containing a LUA register which need a def file:
 * [ ] src/xrGame/script_game_object_script.cpp
 * [ ] src/xrGame/script_game_object_script_trader.cpp
 * [ ] src/xrGame/script_hit_script.cpp
+* [ ] src/xrGame/script_imgui_script.cpp
 * [ ] src/xrGame/script_lanim.cpp
 * [ ] src/xrGame/script_light_script.cpp
 * [ ] src/xrGame/script_monster_action_script.cpp
@@ -196,6 +198,6 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrServerEntities/xrServer_Objects_script2.cpp
 * [x] src/xrServerEntities/xrServer_Objects_script.cpp
 
-Command used to gen file list: `grep -lR '\.def' | sort -u`
+Command used to gen file list: `grep -lR 'script_register' | sort -u`
 
 Yes ... I may have missed some of them.
