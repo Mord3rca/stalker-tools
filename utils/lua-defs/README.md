@@ -180,6 +180,7 @@ List of files containing a LUA register which need a def file:
 * [x] src/xrServerEntities/script_net_packet_script.cpp
 * [x] src/xrServerEntities/script_reader_script.cpp
 * [x] src/xrServerEntities/script_rtoken_list_script.cpp
+* [x] src/xrServerEntities/script_sound_type_script.cpp
 * [x] src/xrServerEntities/script_token_list_script.cpp
 * [x] src/xrServerEntities/xrServer_Objects_ALife_Items_script.cpp
 * [x] src/xrServerEntities/xrServer_Objects_ALife_Items_script2.cpp
