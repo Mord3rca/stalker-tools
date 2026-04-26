@@ -17,7 +17,7 @@ const size_t dltx_parser_max_inheritence = 8;
 
 const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
 const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
-const char dltx_section_regex_pattern[] = "([!@]{,2})\\[([[:graph:]]*)\\](:([0-9A-Za-z ,_]*))?";
+const char dltx_section_regex_pattern[] = "([!@]{,2})\\[([[:graph:]]*)\\](:([0-9A-Za-z .,_-]*))?";
 
 regex_t dltx_key_regex;
 regex_t dltx_include_regex;
@@ -650,6 +650,9 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 
 	while(cur < end) {
 		switch(*cur) {
+		case '-':
+			if (*(cur+1) != '-')
+				break;
 		case ';':
 		case '\r':
 			*cur = '\0';
