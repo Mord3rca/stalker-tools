@@ -13,7 +13,7 @@
 #include "dynarray.h"
 
 const size_t dltx_parser_buffer_size = 256*1024;
-const size_t dltx_parser_max_inheritence = 8;
+const size_t dltx_parser_max_inheritence = 16;
 
 const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
 const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
@@ -150,6 +150,38 @@ char *_relative_to(const char *path, const char *file) {
 	return r;
 }
 
+static void _dltx_parser_append_inheritance(DLTXSection *s, const char name[]) {
+	char **arr = s->inheritance, **n = NULL;
+	char **arr_end = arr + dltx_parser_max_inheritence;
+
+	for (;arr < arr_end; arr++) {
+		if (! *arr) {
+			if(!n)
+				n = arr;
+
+			continue;
+		}
+
+		if (strcmp(*arr, name) == 0)
+			return;  // Already in inheritance
+	}
+
+	if (n)
+		*n = strdup(name);
+}
+
+static void _dltx_parser_delete_inheritance(DLTXSection *s, const char name[]) {
+	char **arr = s->inheritance;
+	char **arr_end = arr + dltx_parser_max_inheritence;
+
+	for (; arr < arr_end; arr++) {
+		if (arr && strcmp(*arr, name)) {
+			free(*arr);
+			*arr = NULL;
+		}
+	}
+}
+
 
 static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) {
 	int i;
@@ -164,7 +196,7 @@ static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) 
 
 	root->cur_section->inheritance = ar;
 
-	for(i = 0, str = inheritance; ; i++, str = NULL) {
+	for(i = 0, str = inheritance; ; str = NULL) {
 		if (i >= dltx_parser_max_inheritence) {
 			root->on_error(root, EVAL_GENERIC_ERROR, "TOO MUCH INHERITANCE ABORT");
 			break;
@@ -175,9 +207,10 @@ static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) 
 
 		token = _strip(token);
 		if (!token)
-			break;
+			continue;
 
 		ar[i] = strdup(token);
+		i++;
 	}
 }
 
@@ -481,24 +514,59 @@ static bool _merge_files_array(char **obj, struct dynarray *dest) {
 }
 #endif
 
-static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, DLTXSection *over, int depth) {
-	DLTXSection *result, *temp;
-	DLTXSection *nbase, *nover;
-	char **inheritance;
+static void _dltx_parser_override_inheritance(DLTXSection *base, const DLTXSection *over) {
+	char **arr = base->inheritance, **barr;
+	char **arr_end = arr + dltx_parser_max_inheritence;
 
-	if (depth > 16) {
-		root->on_error(root, EVAL_GENERIC_ERROR, "Suspecting cycle deps for section [%s]", base->name);
-		return NULL;
+	if (!over->inheritance)
+		return;
+
+	if (!base->inheritance) {
+		base->inheritance = calloc(sizeof(char*), dltx_parser_max_inheritence);
+	        memset(base->inheritance, 0, sizeof(char*) * dltx_parser_max_inheritence);
+
+		barr = base->inheritance;
+		arr = over->inheritance;
+		arr_end = arr + dltx_parser_max_inheritence;
+		for (;arr < arr_end; arr++) {
+			if (*arr && **arr == '!')
+				continue;
+
+			*barr = strdup(*arr);
+			barr++;
+		}
+		return;
 	}
 
-	result = dltx_find_section(root->results, base->name);
-	if (result)
-		return result;
+	for (; arr < arr_end; arr++) {
+		if (! *arr)
+			continue;
 
-	result = dltx_create_section(base->name);
+		if ((**arr) == '!') {
+			_dltx_parser_delete_inheritance(base, (*arr) + 1);
+			continue;
+		}
+
+		_dltx_parser_append_inheritance(base, *arr);
+	}
+}
+
+static DLTXSection *_dltx_parser_evaluate_section(DLTXParser*, DLTXSection*, DLTXSection*, int);
+
+static void _dltx_parser_apply_inheritance(DLTXParser *root, DLTXSection *result, const DLTXSection *base, const DLTXSection *over, const int depth) {
+	DLTXSection *temp;
+	DLTXSection *nbase, *nover;
+	char **inheritance = base->inheritance;
+	char **inheritance_end = inheritance + dltx_parser_max_inheritence;
+
+	if (!base->inheritance)
+		return;
 
 	// Apply inheritance
-	for (inheritance = base->inheritance; inheritance && *inheritance; inheritance++) {
+	for (; inheritance < inheritance_end; inheritance++) {
+		if (!(*inheritance))
+			continue;
+
 		temp = dltx_find_section(root->results, *inheritance);
 		if (!temp) {
 			nbase = dltx_find_section(root->bases, *inheritance);
@@ -521,6 +589,26 @@ static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection 
 		}
 		dltx_section_update_keys(result, temp);
 	}
+}
+
+static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, DLTXSection *over, int depth) {
+	DLTXSection *result;
+
+	if (depth > 16) {
+		root->on_error(root, EVAL_GENERIC_ERROR, "Suspecting cycle deps for section [%s]", base->name);
+		return NULL;
+	}
+
+	result = dltx_find_section(root->results, base->name);
+	if (result)
+		return result;
+
+	result = dltx_create_section(base->name);
+
+	if (over)
+		_dltx_parser_override_inheritance(base, over);
+
+	_dltx_parser_apply_inheritance(root, result, base, over, depth);
 
 	dltx_section_update_keys(result, base);
 
