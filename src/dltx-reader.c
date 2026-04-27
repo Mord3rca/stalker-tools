@@ -26,7 +26,9 @@ void write_section(DLTXSection s, FILE *out) {
 	if (out == NULL)
 		out = stdout;
 #ifdef DLTX_TRACE
-	fprintf(out, "[%s]%-72s; Defined here %s:%lu\r\n", s.name, " ", s.file, s.line);
+	char key[512];
+	snprintf(key, 512, "[%s]", s.name);
+	fprintf(out, "%-77s; Defined here %s:%lu\r\n", key, s.file, s.line);
 #else
 	fprintf(out, "[%s]\r\n", s.name);
 #endif
