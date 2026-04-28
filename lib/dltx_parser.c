@@ -337,6 +337,7 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 	// Start with a # so probably a header
 	if (line[0] == '#' && regexec(&dltx_include_regex, line, max_group, pmatch, 0) == 0) {
 		line[pmatch[1].rm_eo] = 0;
+		filesystem_path_tolower(line + pmatch[1].rm_so);
 		if (_is_globbing(line + pmatch[1].rm_so))
 			root->on_glob_include_directive(root, line + pmatch[1].rm_so);
 		else

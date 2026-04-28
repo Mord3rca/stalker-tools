@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <glob.h>
 #include <libgen.h>
 #include <limits.h>
@@ -16,6 +17,18 @@ static void _to_unix_path(char path[]) {
 	while(*cur != 0) {
 		if (*cur == '\\')
 			*cur = '/';
+		cur++;
+	}
+}
+
+void filesystem_path_tolower(char path[]) {
+	char *cur = path;
+
+	if ( !cur )
+		return;
+
+	while ( *cur != 0 ) {
+		*cur = tolower(*cur);
 		cur++;
 	}
 }
