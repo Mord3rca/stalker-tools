@@ -36,7 +36,4 @@ done < <(tac "${gamma_dir}/profiles/G.A.M.M.A/modlist.txt")
 )
 cp -r --update=none "${dest_dir}/extract/configs"/* "${dest_dir}/gamedata/configs"
 
-# Fix inclusion to be lowercase
-find "${dest_dir}/gamedata/configs/" -name '*.ltx' -exec sed -i 's/#include ".*"/\L&/g' {} \;
-
 echo "Config ready in: ${dest_dir}/gamedata/configs/system.ltx"
