@@ -1,6 +1,4 @@
 #include <ctype.h>
-#include <glob.h>
-#include <libgen.h>
 #include <limits.h>
 #include <regex.h>
 #include <stdarg.h>
@@ -11,6 +9,7 @@
 
 #include "dltx_parser.h"
 #include "dynarray.h"
+#include "filesystem.h"
 
 const size_t dltx_parser_buffer_size = 256*1024;
 const size_t dltx_parser_max_inheritence = 16;
@@ -120,35 +119,6 @@ struct _DLTXParser_s {
 };
 
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser*, const char[]);
-
-void _to_unix_path(char path[]) {
-	char *cur = path;
-
-	if (!cur)
-		return;
-
-	while(*cur != 0) {
-		if (*cur == '\\')
-			*cur = '/';
-		cur++;
-	}
-}
-
-// TODO: Bad naming. Not really a relative resolve
-char *_relative_to(const char *path, const char *file) {
-	char *r = calloc(sizeof(char), PATH_MAX);
-	char *p = strdup(path);
-
-	memset(r, 0, PATH_MAX);
-
-	strcpy(r, dirname(p));
-	free(p);
-
-	strcat(r, "/");
-	strcat(r, file);
-	_to_unix_path(r);  // Fix path in case of *NIX
-	return r;
-}
 
 static void _dltx_parser_append_inheritance(DLTXSection *s, const char name[]) {
 	char **arr = s->inheritance, **n = NULL;
@@ -303,7 +273,7 @@ void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) 
 void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 	DLTX_RETURN_CODE err;
 	char *from = root->cur_file_path;
-	char *to = _relative_to(from, path);
+	char *to = filesystem_path_append(from, path);
 	size_t sline = root->cur_line;
 
 	err = dltx_parser_process_file(root, to);
@@ -319,33 +289,27 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 }
 
 void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]) {
-	int i;
-	glob_t gl;
-	char *to = _relative_to(root->cur_file_path, path);
-	char *dir = strdup(root->cur_file_path);
+	fs_return_code err;
+	char **paths = NULL;
+	char *to = filesystem_path_append(root->cur_file_path, path);
 
-	dirname(dir);
-
-	// Not the pretiest but just "works"
-	i = glob(to, GLOB_PERIOD, NULL, &gl);
-	if (i != 0) {
-		if (i != GLOB_NOMATCH)
-			root->on_error(root, FILE_READ_ERROR, "Globbing error on %s", path);
+	err = filesystem_glob(to, root->cur_file_path, &paths);
+	if (err != FS_NO_ERROR) {
+		if (err != FS_GLOB_NO_MATCH)
+			root->on_error(root, FILE_READ_ERROR, "Error while globbing %s", to);
 		free(to);
-		free(dir);
 		return;
 	}
 
-	for(i=0; gl.gl_pathv[i]; i++) {
-		root->on_include_directive(root, gl.gl_pathv[i] + strlen(dir) + 1);
+	for (size_t i = 0; paths[i]; i++) {
+		root->on_include_directive(root, paths[i]);
+		free(paths[i]);
 	}
-
 	free(to);
-	free(dir);
-	globfree(&gl);
+	free(paths);
 }
 
-bool _is_globbing(const char path[]) {
+static bool _is_globbing(const char path[]) {
 	const char *start = path;
 	const char *end = path + strlen(path);
 
@@ -707,26 +671,18 @@ void _dltx_apply_overrides(DLTXParser *root) {
 }
 
 static void _dltx_include_modfile(DLTXParser *root) {
-	char *file = NULL;
-	char *bname, *temp;
-	char glob[PATH_MAX] = {0};
+	char *glob;
 
 	if (root->is_parsing_modfile)
 		return; // Small guard to avoid modfile chaos
 
 	root->is_parsing_modfile = true;
 
-	file = strdup(root->cur_file_path);
-	bname = basename(file);
-	temp = strstr(bname, ".ltx");
-	if (temp)
-		*temp = 0;
-
-	snprintf(glob, PATH_MAX, "mod_%s_*.ltx", bname);
+	glob = filesystem_get_modfile_glob_path(root->cur_file_path);
 
 	root->on_glob_include_directive(root, glob);
 
-	free(file);
+	free(glob);
 	root->is_parsing_modfile = false;
 }
 
