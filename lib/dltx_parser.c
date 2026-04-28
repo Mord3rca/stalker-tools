@@ -295,7 +295,7 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 
 	err = filesystem_glob(to, root->cur_file_path, &paths);
 	if (err != FS_NO_ERROR) {
-		if (err != FS_GLOB_NO_MATCH)
+		if (err != FS_GLOB_NO_MATCH && !root->is_parsing_modfile)
 			root->on_error(root, FILE_READ_ERROR, "Error while globbing %s", to);
 		free(to);
 		return;
