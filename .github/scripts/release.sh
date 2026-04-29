@@ -7,7 +7,7 @@ platform=linux
 
 run_linux() {
 	mkdir package/
-	cmake --install out DESTDIR=package/
+	make -C out/ DESTDIR="${PWD}/package/" install
 
 	cd package || exit 1
 	tar czf "../${output_name}" *
