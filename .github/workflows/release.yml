@@ -1,0 +1,43 @@
+name: Generate Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  generate:
+
+    strategy:
+      matrix:
+        include:
+            - os: ubuntu-latest
+              artifact_name: artifacts/stalker-tools-linux-x86_64.tar.gz
+            - os: windows-latest
+              artifact_name: artifacts/stalker-tools-msys-win64.zip
+
+    name: Create Artifacts
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: true
+        install: cmake gcc git make zip
+      if: runner.os == 'Windows'
+
+    - run: sudo apt install cmake
+      if: runner.os == 'Linux'
+
+    - name: Build
+      run: cmake -B out/ -DENABLE_DLTX_TRACE=ON && cmake --build out/
+
+    - name: Packaging
+      run: bash .github/scripts/release.sh
+
+    - name: Upload artifacts
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ${{ matrix.artifact_name }}
