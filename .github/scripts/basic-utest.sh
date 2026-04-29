@@ -10,7 +10,7 @@ trap 'rm "${wfile}"' EXIT
 test_file() {
 	ifile="${1}"
 
-	valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/dltx-reader "tests/data/${ifile}" >"${wfile}"
+	valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/src/dltx-reader "tests/data/${ifile}" >"${wfile}"
 
 	read -r ihash _ < <(md5sum "tests/expected/${ifile}")
 	read -r whash _ < <(md5sum "${wfile}")
@@ -20,9 +20,6 @@ test_file() {
 		diff "tests/expected/${ifile}" "${wfile}"
 		exit 1
 	} >&2
-
-	echo "===== VALGRIND TEST FOR TRACE OPTION"
-	valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/dltx-trace-reader "tests/data/${ifile}" >/dev/null
 }
 
 if [ "${#}" -eq 1 ]; then

@@ -12,9 +12,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install deps
-        run: sudo apt install valgrind
+        run: sudo apt install cmake valgrind
       - name: Building
-        run: ./build.sh
+        run: cmake -B out/ -DENABLE_DLTX_TRACE=ON && cmake --build out/
       - name: Test simple.ltx
         run: .github/scripts/basic-utest.sh simple.ltx
       - name: Test dirty.ltx
