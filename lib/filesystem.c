@@ -49,6 +49,7 @@ char *filesystem_path_append(const char *path, const char *file) {
 	return r;
 }
 
+
 fs_return_code filesystem_glob(const char path[], const char relative[], char **out[]) {
 	int err;
 	char *tmp;
@@ -63,7 +64,7 @@ fs_return_code filesystem_glob(const char path[], const char relative[], char **
 		free(tmp);
 	}
 
-	err = glob(path, GLOB_PERIOD, NULL, &gl);
+	err = glob(path, 0, NULL, &gl);
 	if (err != 0) {
 		//free
 		return err == GLOB_NOMATCH ? FS_GLOB_NO_MATCH : FS_GLOB_ERROR;
