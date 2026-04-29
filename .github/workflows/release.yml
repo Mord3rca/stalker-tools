@@ -12,11 +12,17 @@ jobs:
         include:
             - os: ubuntu-latest
               artifact_name: artifacts/stalker-tools-linux-x86_64.tar.gz
+              shell: bash
             - os: windows-latest
               artifact_name: artifacts/stalker-tools-msys-win64.zip
+              shell: msys2 {0}
 
     name: Create Artifacts
     runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
 
     steps:
     - uses: actions/checkout@v3
@@ -34,7 +40,7 @@ jobs:
       run: cmake -B out/ -DENABLE_DLTX_TRACE=ON && cmake --build out/
 
     - name: Packaging
-      run: bash .github/scripts/release.sh
+      run: .github/scripts/release.sh
 
     - name: Upload artifacts
       uses: svenstaro/upload-release-action@v2
