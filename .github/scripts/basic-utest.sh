@@ -10,7 +10,11 @@ trap 'rm "${wfile}"' EXIT
 test_file() {
 	ifile="${1}"
 
-	valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/src/dltx-reader "tests/data/${ifile}" >"${wfile}"
+	if [ -v NO_VALGRIND ]; then
+		out/src/dltx-reader "tests/data/${ifile}" >"${wfile}"
+	else
+		valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/src/dltx-reader "tests/data/${ifile}" >"${wfile}"
+	fi
 
 	read -r ihash _ < <(md5sum "tests/expected/${ifile}")
 	read -r whash _ < <(md5sum "${wfile}")
