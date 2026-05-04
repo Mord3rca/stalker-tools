@@ -1,20 +1,9 @@
-// LzHuf.cpp : Defines the entry point for the console application.
-//
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "stdafx.h"
-#pragma hdrstop
-
-#include <io.h>
-#include <fcntl.h>
-#include <sys\stat.h>
-
-#define MODULE
-
-//typedef unsigned char BYTE;
-
-unsigned textsize = 0, codesize = 0;
-
-char wterr[] = "Can't write.";
+static unsigned textsize = 0, codesize = 0;
 
 /********** LZSS compression **********/
 
@@ -29,171 +18,162 @@ char wterr[] = "Can't write.";
 #define MAX_FREQ 0x4000 /* updates tree when the */
 
 
-u8 text_buf[N + F];
-int match_position, match_length, lson[N + 1], rson[N + 257], dad[N + 1];
+static unsigned char text_buf[N + F];
+static int match_position, match_length, lson[N + 1], rson[N + 257], dad[N + 1];
 
-unsigned code, len;
-unsigned tim_size = 0;
+static unsigned code, len;
+static unsigned tim_size = 0;
 
-unsigned freq[T + 1]; /* frequency table */
+static unsigned freq[T + 1]; /* frequency table */
 
-int prnt[T + N_CHAR + 1]; /* pointers to parent nodes, except for the */
+static int prnt[T + N_CHAR + 1]; /* pointers to parent nodes, except for the */
 /* elements [T..T + N_CHAR - 1] which are used to get */
 /* the positions of leaves corresponding to the codes. */
 
-int son[T]; /* pointers to child nodes (son[], son[] + 1) */
+static int son[T]; /* pointers to child nodes (son[], son[] + 1) */
 
-//************************** Internal FS
-//typedef xr_vector<BYTE> vecB;
-class LZfs
+struct LZfs
 {
-private:
 	unsigned getbuf;
 	unsigned getlen;
 
 	unsigned putbuf;
 	unsigned putlen;
 
-	u8* in_start;
-	u8* in_end;
-	u8* in_iterator;
+	unsigned char *in_start;
+	unsigned char *in_end;
+	unsigned char *in_iterator;
 
-	u8* out_start;
-	u8* out_end;
-	u8* out_iterator;
-public:
-	IC int _getb()
+	unsigned char *out_start;
+	unsigned char *out_end;
+	unsigned char *out_iterator;
+};
+
+static struct LZfs fs;
+
+static inline int _getb()
+{
+	if (fs.in_iterator == fs.in_end) return EOF;
+	return *(fs.in_iterator++);
+}
+
+static inline void _putb(int c)
+{
+	if (fs.out_iterator == fs.out_end)
 	{
-		if (in_iterator == in_end) return EOF;
-		return *in_iterator++;
+		uint32_t out_size = (uint32_t)(fs.out_end - fs.out_start);
+		fs.out_start = realloc(fs.out_start, out_size + 1024);
+		fs.out_iterator = fs.out_start + out_size;
+		fs.out_end = fs.out_iterator + 1024;
 	}
+	*(fs.out_iterator++) = (unsigned char)(c & 0xFF);
+}
 
-	IC void _putb(int c)
+static inline void Init_Input(unsigned char *_start, unsigned char *_end)
+{
+	// input
+	fs.in_start = _start;
+	fs.in_end = _end;
+	fs.in_iterator = fs.in_start;
+
+	// bitwise input/output
+	fs.getbuf = fs.getlen = fs.putbuf = fs.putlen = 0;
+}
+
+static inline void Init_Output(int _rsize)
+{
+	// output
+	fs.out_start = malloc(_rsize);
+	fs.out_end = fs.out_start + _rsize;
+	fs.out_iterator = fs.out_start;
+}
+
+static inline uint32_t InputSize()
+{
+	return fs.in_end - fs.in_start;
+}
+
+static inline uint32_t OutSize()
+{
+	return fs.out_iterator - fs.out_start;
+}
+
+static inline unsigned char *OutPointer()
+{
+	return fs.out_start;
+}
+
+static inline void OutRelease()
+{
+	free(fs.out_start);
+	fs.out_start = 0;
+	fs.out_end = 0;
+	fs.out_iterator = 0;
+}
+
+static inline int GetBit(void) /* get one bit */
+{
+	unsigned i;
+
+	while (fs.getlen <= 8)
 	{
-		if (out_iterator == out_end)
+		if ((int)(i = _getb()) < 0) i = 0;
+		fs.getbuf |= i << (8 - fs.getlen);
+		fs.getlen += 8;
+	}
+	i = fs.getbuf;
+	fs.getbuf <<= 1;
+	fs.getlen--;
+	return (int)((i & 0x8000) >> 15);
+}
+
+static inline int GetByte(void) /* get one byte */
+{
+	unsigned i;
+
+	while (fs.getlen <= 8)
+	{
+		if ((int)(i = _getb()) < 0) i = 0;
+		fs.getbuf |= i << (8 - fs.getlen);
+		fs.getlen += 8;
+	}
+	i = fs.getbuf;
+	fs.getbuf <<= 8;
+	fs.getlen -= 8;
+	return (int)((i & 0xff00) >> 8);
+}
+
+static inline void PutCode(int l, unsigned c) /* output c bits of code */
+{
+	fs.putbuf |= c >> fs.putlen;
+	if ((fs.putlen += l) >= 8)
+	{
+		_putb(fs.putbuf >> 8);
+		if ((fs.putlen -= 8) >= 8)
 		{
-			u32 out_size = u32(out_end - out_start);
-			out_start = (u8*)xr_realloc(out_start, out_size + 1024);
-			out_iterator = out_start + out_size;
-			out_end = out_iterator + 1024;
+			_putb(fs.putbuf);
+			codesize += 2;
+			fs.putlen -= 8;
+			fs.putbuf = c << (l - fs.putlen);
 		}
-		*out_iterator++ = u8(c & 0xFF);
-	}
-
-	LZfs()
-	{
-		in_start = in_end = in_iterator = 0;
-		out_start = out_end = out_iterator = 0;
-	}
-
-	IC void Init_Input(u8* _start, u8* _end)
-	{
-		// input
-		in_start = _start;
-		in_end = _end;
-		in_iterator = in_start;
-
-		// bitwise input/output
-		getbuf = getlen = putbuf = putlen = 0;
-	}
-
-	IC void Init_Output(int _rsize)
-	{
-		// output
-		out_start = (u8*)xr_malloc(_rsize);
-		out_end = out_start + _rsize;
-		out_iterator = out_start;
-	}
-
-	IC u32 InputSize()
-	{
-		return u32(in_end - in_start);
-	}
-
-	IC u32 OutSize()
-	{
-		return u32(out_iterator - out_start);
-	}
-
-	IC u8* OutPointer()
-	{
-		return out_start;
-	}
-
-	IC void OutRelease()
-	{
-		xr_free(out_start);
-		out_start = 0;
-		out_end = 0;
-		out_iterator = 0;
-	}
-
-	IC int GetBit(void) /* get one bit */
-	{
-		unsigned i;
-
-		while (getlen <= 8)
+		else
 		{
-			if ((int)(i = _getb()) < 0) i = 0;
-			getbuf |= i << (8 - getlen);
-			getlen += 8;
-		}
-		i = getbuf;
-		getbuf <<= 1;
-		getlen--;
-		return (int)((i & 0x8000) >> 15);
-	}
-
-	IC int GetByte(void) /* get one byte */
-	{
-		unsigned i;
-
-		while (getlen <= 8)
-		{
-			if ((int)(i = _getb()) < 0) i = 0;
-			getbuf |= i << (8 - getlen);
-			getlen += 8;
-		}
-		i = getbuf;
-		getbuf <<= 8;
-		getlen -= 8;
-		return (int)((i & 0xff00) >> 8);
-	}
-
-	IC void PutCode(int l, unsigned c) /* output c bits of code */
-	{
-		putbuf |= c >> putlen;
-		if ((putlen += l) >= 8)
-		{
-			_putb(putbuf >> 8);
-			if ((putlen -= 8) >= 8)
-			{
-				_putb(putbuf);
-				codesize += 2;
-				putlen -= 8;
-				putbuf = c << (l - putlen);
-			}
-			else
-			{
-				putbuf <<= 8;
-				codesize++;
-			}
-		}
-	}
-
-	IC void PutFlush()
-	{
-		if (putlen)
-		{
-			_putb(putbuf >> 8);
+			fs.putbuf <<= 8;
 			codesize++;
 		}
 	}
-};
+}
 
-static LZfs fs;
-//************************** Internal FS
-IC void InitTree(void) /* initialize trees */
+static inline void PutFlush()
+{
+	if (fs.putlen)
+	{
+		_putb(fs.putbuf >> 8);
+		codesize++;
+	}
+}
+
+static inline void InitTree(void) /* initialize trees */
 {
 	int i;
 
@@ -201,10 +181,10 @@ IC void InitTree(void) /* initialize trees */
 	for (i = 0; i < N; i++) dad[i] = NIL; /* node */
 }
 
-void InsertNode(int r) /* insert to tree */
+static void InsertNode(int r) /* insert to tree */
 {
 	int i, p, cmp;
-	u8* key;
+	unsigned char *key;
 	unsigned c;
 
 	cmp = 1;
@@ -268,7 +248,7 @@ void InsertNode(int r) /* insert to tree */
 	dad[p] = NIL; /* remove p */
 }
 
-void DeleteNode(int p) /* remove from tree */
+static void DeleteNode(int p) /* remove from tree */
 {
 	int q;
 
@@ -308,10 +288,9 @@ void DeleteNode(int p) /* remove from tree */
 
 /* Huffman coding */
 
-
 /* table for encoding and decoding the upper 6 bits of position */
 /* for encoding */
-u8 p_len[64] =
+static unsigned char p_len[64] =
 {
 	0x03, 0x04, 0x04, 0x04, 0x05, 0x05, 0x05, 0x05,
 	0x05, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x06,
@@ -323,7 +302,7 @@ u8 p_len[64] =
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
 };
 
-u8 p_code[64] =
+static unsigned char p_code[64] =
 {
 	0x00, 0x20, 0x30, 0x40, 0x50, 0x58, 0x60, 0x68,
 	0x70, 0x78, 0x80, 0x88, 0x90, 0x94, 0x98, 0x9C,
@@ -336,7 +315,7 @@ u8 p_code[64] =
 };
 
 /* for decoding */
-u8 d_code[256] =
+static unsigned char d_code[256] =
 {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -372,7 +351,7 @@ u8 d_code[256] =
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
 };
 
-u8 d_len[256] =
+static unsigned char d_len[256] =
 {
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
@@ -411,7 +390,7 @@ u8 d_len[256] =
 
 /* initialization of tree */
 
-void StartHuff(void)
+static void StartHuff(void)
 {
 	int i, j;
 
@@ -437,7 +416,7 @@ void StartHuff(void)
 
 
 /* reconstruction of tree */
-void reconst(void)
+static void reconst(void)
 {
 	int i, j, k;
 	unsigned f, l;
@@ -483,7 +462,7 @@ void reconst(void)
 
 
 /* increment frequency of given code by one, and update tree */
-void update(int c)
+static void update(int c)
 {
 	int i, j, k, l;
 
@@ -521,7 +500,7 @@ void update(int c)
 	while ((c = prnt[c]) != 0); /* repeat up to root */
 }
 
-void EncodeChar(unsigned c)
+static void EncodeChar(unsigned c)
 {
 	unsigned i;
 	int j, k;
@@ -542,25 +521,25 @@ void EncodeChar(unsigned c)
 		k = prnt[k];
 	}
 	while (k != R);
-	fs.PutCode(j, i);
+	PutCode(j, i);
 	code = i;
 	len = j;
 	update(c);
 }
 
-void EncodePosition(unsigned c)
+static void EncodePosition(unsigned c)
 {
 	unsigned i;
 
 	/* output upper 6 bits by table lookup */
 	i = c >> 6;
-	fs.PutCode(p_len[i], (unsigned)p_code[i] << 8);
+	PutCode(p_len[i], (unsigned)p_code[i] << 8);
 
 	/* output lower 6 bits verbatim */
-	fs.PutCode(6, (c & 0x3f) << 10);
+	PutCode(6, (c & 0x3f) << 10);
 }
 
-int DecodeChar(void)
+static int DecodeChar(void)
 {
 	unsigned c;
 
@@ -571,7 +550,7 @@ int DecodeChar(void)
 	/* the bigger (son[]+1} if 1 */
 	while (c < T)
 	{
-		c += fs.GetBit();
+		c += GetBit();
 		c = son[c];
 	}
 	c -= T;
@@ -579,12 +558,12 @@ int DecodeChar(void)
 	return (int)c;
 }
 
-int DecodePosition(void)
+static int DecodePosition(void)
 {
 	unsigned i, j, c;
 
 	/* recover upper 6 bits from table */
-	i = fs.GetByte();
+	i = GetByte();
 	c = (unsigned)d_code[i] << 6;
 	j = d_len[i];
 
@@ -592,22 +571,22 @@ int DecodePosition(void)
 	j -= 2;
 	while (j--)
 	{
-		i = (i << 1) + fs.GetBit();
+		i = (i << 1) + GetBit();
 	}
 	return (int)(c | (i & 0x3f));
 }
 
 /* compression */
-void Encode(void) /* compression */
+static void Encode(void) /* compression */
 {
 	int i, c, len, r, s, last_match_length;
 
-	textsize = fs.InputSize();
-	fs.Init_Output(textsize);
-	fs._putb((textsize & 0xff));
-	fs._putb((textsize & 0xff00) >> 8);
-	fs._putb((textsize & 0xff0000L) >> 16);
-	fs._putb((textsize & 0xff000000L) >> 24);
+	textsize = InputSize();
+	Init_Output(textsize);
+	_putb((textsize & 0xff));
+	_putb((textsize & 0xff00) >> 8);
+	_putb((textsize & 0xff0000L) >> 16);
+	_putb((textsize & 0xff000000L) >> 24);
 	if (textsize == 0)
 		return;
 	textsize = 0; /* rewind and re-read */
@@ -617,7 +596,7 @@ void Encode(void) /* compression */
 	r = N - F;
 	for (i = s; i < r; i++)
 		text_buf[i] = 0x20;
-	for (len = 0; len < F && (c = fs._getb()) != EOF; len++)
+	for (len = 0; len < F && (c = _getb()) != EOF; len++)
 		text_buf[r + len] = (unsigned char)c;
 	textsize = len;
 	for (i = 1; i <= F; i++)
@@ -640,7 +619,7 @@ void Encode(void) /* compression */
 		}
 		last_match_length = match_length;
 		for (i = 0; i < last_match_length &&
-		     (c = fs._getb()) != EOF; i++)
+		     (c = _getb()) != EOF; i++)
 		{
 			DeleteNode(s);
 			text_buf[s] = (unsigned char)c;
@@ -660,22 +639,22 @@ void Encode(void) /* compression */
 		}
 	}
 	while (len > 0);
-	fs.PutFlush();
+	PutFlush();
 	tim_size = textsize;
 }
 
-void Decode(void) /* recover */
+static void Decode(void) /* recover */
 {
 	int i, j, k, r, c;
 	unsigned int count;
 
-	textsize = (fs._getb());
-	textsize |= (fs._getb() << 8);
-	textsize |= (fs._getb() << 16);
-	textsize |= (fs._getb() << 24);
+	textsize = (_getb());
+	textsize |= (_getb() << 8);
+	textsize |= (_getb() << 16);
+	textsize |= (_getb() << 24);
 	if (textsize == 0) return;
 
-	fs.Init_Output(textsize);
+	Init_Output(textsize);
 
 	StartHuff();
 	for (i = 0; i < N - F; i++)
@@ -686,7 +665,7 @@ void Decode(void) /* recover */
 		c = DecodeChar();
 		if (c < 256)
 		{
-			fs._putb(c);
+			_putb(c);
 			text_buf[r++] = (unsigned char)c;
 			r &= (N - 1);
 			count++;
@@ -698,7 +677,7 @@ void Decode(void) /* recover */
 			for (k = 0; k < j; k++)
 			{
 				c = text_buf[(i + k) & (N - 1)];
-				fs._putb(c);
+				_putb(c);
 				text_buf[r++] = (unsigned char)c;
 				r &= (N - 1);
 				count++;
@@ -708,51 +687,20 @@ void Decode(void) /* recover */
 	tim_size = count;
 }
 
-unsigned _writeLZ(int hf, void* d, unsigned size)
+void huffman_compress(void** dest, size_t *dest_sz, void* src, size_t src_sz)
 {
-	u8* start = (u8*)d;
-	fs.Init_Input(start, start + size);
-
-	// Actual compression
+	unsigned char *start = src;
+	Init_Input(start, start + src_sz);
 	Encode();
-	// Flush cache
-	int size_out = fs.OutSize();
-	if (size_out) _write(hf, fs.OutPointer(), size_out);
-	fs.OutRelease();
-	return size_out;
+	*dest = OutPointer();
+	*dest_sz = OutSize();
 }
 
-void _compressLZ(u8** dest, unsigned* dest_sz, void* src, unsigned src_sz)
+void huffman_decompress(void** dest, size_t* dest_sz, void* src, size_t src_sz)
 {
-	u8* start = (u8*)src;
-	fs.Init_Input(start, start + src_sz);
-	Encode();
-	*dest = fs.OutPointer();
-	*dest_sz = fs.OutSize();
-}
-
-void _decompressLZ(u8** dest, unsigned* dest_sz, void* src, unsigned src_sz)
-{
-	u8* start = (u8*)src;
-	fs.Init_Input(start, start + src_sz);
+	unsigned char *start = src;
+	Init_Input(start, start + src_sz);
 	Decode();
-	*dest = fs.OutPointer();
-	*dest_sz = fs.OutSize();
-}
-
-unsigned _readLZ(int hf, void*& d, unsigned size)
-{
-	// Read file in memory
-	u8* data = (u8*)xr_malloc(size);
-	_read(hf, data, size);
-
-	fs.Init_Input(data, data + size);
-
-	// Actual compression
-	Decode();
-
-	// Flush cache
-	xr_free(data);
-	d = fs.OutPointer();
-	return fs.OutSize();
+	*dest = OutPointer();
+	*dest_sz = OutSize();
 }
