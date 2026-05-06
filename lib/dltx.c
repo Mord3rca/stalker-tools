@@ -53,6 +53,7 @@ DLTX_RETURN_CODE dltx_init(void) {
 	return dltx_parser_init();
 }
 
+__attribute__((destructor))
 void dltx_cleanup(void) {
 	dltx_parser_cleanup();
 }

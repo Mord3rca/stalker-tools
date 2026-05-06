@@ -116,6 +116,5 @@ int main(int argc, char *argv[]) {
 	dynarray_foreach(ini->sections, (bool (*)(void*, void*))write_cb, stdout);
 
 	free_dltx(ini);
-	dltx_cleanup();
 	return 0;
 }
