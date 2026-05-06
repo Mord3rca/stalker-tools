@@ -366,6 +366,21 @@ DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
 	return s;
 }
 
+const char *dltx_get_key(DLTX *root, const char section[], const char key[]) {
+	DLTXSection *s;
+	DLTXKey *k;
+
+	s = dltx_find_section(root, section);
+	if (!s)
+		return NULL;
+
+	k = dltx_section_get_key(s, key);
+	if (!k)
+		return NULL;
+
+	return k->value;
+}
+
 bool dltx_delete_section(DLTX *root, const char name[]) {
 	DLTXSection *s;
 
