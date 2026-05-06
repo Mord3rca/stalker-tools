@@ -791,6 +791,7 @@ DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buff
 	// Disable file inclusion for raw buffer
 	reader->on_include_directive = dltx_parser_on_include_noop;
 	reader->on_glob_include_directive = dltx_parser_on_include_noop;
+	reader->is_parsing_modfile = true;  // Don't process modfiles
 
 	reader->cur_file_path = strdup("<raw buffer>");
 	reader->cur_line = 1;
