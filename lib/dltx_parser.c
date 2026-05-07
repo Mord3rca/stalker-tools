@@ -693,6 +693,11 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 	char *line = buffer;
 
 	while(cur < end) {
+		if(*cur == '\0') {
+			root->on_new_line(root, line);
+			break;
+		}
+
 		switch(*cur) {
 		case '-':
 			if (*(cur+1) != '-')
@@ -711,11 +716,6 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 		}
 
 		cur++;
-
-		if(*cur == '\0') {
-			root->on_new_line(root, line);
-			break;
-		}
 
 		if (root->err != NO_ERROR)
 			return; // If an error occured during parsing, abort.
