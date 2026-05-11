@@ -14,4 +14,8 @@ fs_return_code filesystem_glob(const char[], const char[], char ***);
 char *filesystem_get_modfile_glob_path(const char[]);
 void filesystem_path_tolower(char[]);
 
+void filesystem_to_system_path(char[]);
+
+int filesystem_create_directory(const char[]);
+
 #endif  // _FILESSYTEM_HEADER

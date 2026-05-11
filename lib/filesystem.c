@@ -1,14 +1,16 @@
 #include <ctype.h>
+#include <errno.h>
 #include <glob.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "filesystem.h"
 
-static void _to_unix_path(char path[]) {
+void filesystem_to_system_path(char path[]) {
 	char *cur = path;
 
 	if (!cur)
@@ -44,7 +46,7 @@ char *filesystem_path_append(const char *path, const char *file) {
 	strcat(r, "/");
 	strcat(r, file);
 
-	_to_unix_path(r);
+	filesystem_to_system_path(r);
 
 	return r;
 }
@@ -100,4 +102,32 @@ char *filesystem_get_modfile_glob_path(const char path[]) {
 
 	free(buffer);
 	return temp;
+}
+
+int filesystem_create_directory(const char dir[]) {
+	int r;
+	char *it, *itstart, *itend;
+
+	itstart = it = strdup(dir);
+	itend = itstart + strlen(dir);
+
+	while (it < itend) {
+		if (*it != '/') {
+			it++;
+			continue;
+		}
+
+		*it = 0;
+		r = mkdir(itstart, S_IRWXU);
+		r = (errno == EEXIST ? 0 : r);
+		*it = '/';
+
+		if (r != 0)
+			break;
+
+		it++;
+	}
+
+	free(itstart);
+	return r;
 }
