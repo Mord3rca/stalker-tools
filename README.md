@@ -19,32 +19,14 @@ ini.read('/path/to/file')
 
 For now, case sensitivity is an issue and depend of your filesystem ...
 
+## xdb
 
-## TODO
+A tar-like executable to manipulate XDB archive (defined by a stalker gamefile containing a header, data & metadata chunks)
 
-Here a list of shit to do for this is usefull:
+Only support **GNU-style** usage (no plan to change that.)
 
-* lib: DLTX
-  * [x] Override at the end of buffer processing
-  * [x] Support for SafeOverride (create if not exist)
-  * [x] Support for section delete
-  * [x] Support for key without value (= may not be present)
-  * [x] Support of mod_* files
-  * [x] Better error report
-  * [x] Trace support
-  * [x] Support for variable deletion
-  * [ ] Support for list var (del. member, add. member & formating)
+### Limitation
 
-* utils: Modding LUA definition file
-  * [x] Create a LUA LS Def. file for XRay Monolith LUA Engine
-  * [ ] Document it ... Cauz' reading engine's code to create a mod was annoying.
+Don't support one-file decompression (aka: `xdb [OPTIONS] -- <FILES>` is tolerated but not supported yet)
 
-* script: STALKER like DLTX Loader extractor
-  * [x] Prepare FS for parsing (Decompress XDB, GAMMA standalone, ...)
-
-* exec: DLTX Linter
-  * [ ] Why not ? Can be done by moving DLTXParser to the public API and tweeking it a bit.
-
-* lib: Gamefiles
-  * [ ] Parse gamefile structure (chunk type etc)
-  * [ ] Read them all (xdb, omf, ...)
+Don't support XDB creation (`-c`) for now
