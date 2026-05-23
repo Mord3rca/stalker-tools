@@ -206,7 +206,7 @@ struct dynarray *xdb_read_metadata(const xdb *x) {
 }
 
 void free_xdb_metadata(struct dynarray *entries) {
-	free_dynarray(entries, (void (*)(void*))&free_xdb_metadata_entry);
+	free_dynarray(entries, (dynarray_free_cb)&free_xdb_metadata_entry);
 }
 
 typedef struct {
@@ -279,7 +279,7 @@ int xdb_extract_all(xdb *archive, const char path[]) {
 
 	args.target = path;
 	args.foffset = cdata->fpos;
-	dynarray_foreach(metadata, (bool (*)(void*,void*))&_xdb_extract_iterator, &args);
+	dynarray_foreach(metadata, (dynarray_cb)&_xdb_extract_iterator, &args);
 
 	free(args.data);
 	free_xdb_metadata(metadata);

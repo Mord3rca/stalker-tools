@@ -453,12 +453,12 @@ static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXPars
 	// per veriable deletion
 	f = dltx_find_section(root->bases, sect->name);
 	if (f) {
-		dynarray_foreach(sect->keys, (bool (*)(void*, void*))&_per_var_deletion, (void*)f);
+		dynarray_foreach(sect->keys, (dynarray_cb)&_per_var_deletion, f);
 	}
 
 	f = dltx_find_section(root->overrides, sect->name);
 	if (f) {
-		dynarray_foreach(sect->keys, (bool (*)(void*, void*))&_per_var_deletion, (void*)f);
+		dynarray_foreach(sect->keys, (dynarray_cb)&_per_var_deletion, f);
 	}
 	// TODO: Error management if key does not exist at all
 
@@ -640,7 +640,7 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 	// Apply resolution to output
 	dltx_sort(root->results);
 	// TODO: Merge instead of replacing
-	free_dynarray(root->output->sections, (void (*)(void*))free_dltx_section);
+	free_dynarray(root->output->sections, (dynarray_free_cb)&free_dltx_section);
 	root->output->sections = root->results->sections;
 	root->results->sections = dynarray_create(1);
 
@@ -648,7 +648,7 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 
 #ifdef DLTX_TRACE
 	if (root->output->files->size > 0) {
-		dynarray_foreach(root->results->files, (bool (*)(void*, void*))&_merge_files_array, root->output->files);
+		dynarray_foreach(root->results->files, (dynarray_cb)&_merge_files_array, root->output->files);
 		free_dynarray(root->results->files, NULL);
 	} else {
 		free_dynarray(root->output->files, NULL);
@@ -660,10 +660,10 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 
 void _dltx_apply_overrides(DLTXParser *root) {
 	// Apply safe overrides
-	dynarray_foreach(root->soverrides, (bool (*)(void*, void*))&_dltx_apply_soverrides_create_iterator, root);
+	dynarray_foreach(root->soverrides, (dynarray_cb)&_dltx_apply_soverrides_create_iterator, root);
 
 	// Apply deletions
-	dynarray_foreach(root->deletions->sections, (bool (*)(void*, void*))&_dltx_apply_overrides_deletions_iterator, root);
+	dynarray_foreach(root->deletions->sections, (dynarray_cb)&_dltx_apply_overrides_deletions_iterator, root);
 
 	dltx_sort(root->bases);
 	dltx_sort(root->overrides);
