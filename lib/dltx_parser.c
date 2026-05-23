@@ -14,6 +14,8 @@
 const size_t dltx_parser_buffer_size = 256*1024;
 const size_t dltx_parser_max_inheritence = 16;
 
+static const char _orphan_section_name[] = "__default__";
+
 const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
 const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
 const char dltx_section_regex_pattern[] = "([!@]{0,2})\\[([[:graph:]]*)\\](:([0-9A-Za-z .,_-]*))?";
@@ -263,8 +265,13 @@ static void _dltx_parser_on_new_key(DLTXParser *root, char key[], char value[]) 
 
 void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) {
 	if (root->cur_section == NULL) {
-		root->on_error(root, PARSER_LOGIC_ERROR, "Cannot insert key into null section");
-		return;
+		if (root->output->flags & DLTX_STRICT) {
+			root->on_error(root, PARSER_LOGIC_ERROR, "Cannot insert key into null section");
+			return;
+		}
+		root->cur_section = dltx_find_section(root->bases, _orphan_section_name);
+		if (root->cur_section == NULL)
+			root->cur_section = dltx_create_new_section(root->bases, _orphan_section_name);
 	}
 
 	(key[0] == '!' ? _dltx_parser_on_delete_key : _dltx_parser_on_new_key)(root, key, value);
