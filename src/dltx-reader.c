@@ -19,7 +19,7 @@ static char sec[512];
 bool write_section_trace(DLTXSection *s, FILE *out) {
 	snprintf(sec, 512, "[%s]", s->name);
 	fprintf(out, "%-77s; Defined @%s:%lu\r\n", sec, s->file, s->line);
-	dynarray_foreach(s->keys, (bool (*)(void*, void*))&write_key_trace, out);
+	dynarray_foreach(s->keys, (dynarray_cb)&write_key_trace, out);
 	fprintf(out, " \r\n");
 
 	return true;
@@ -37,7 +37,7 @@ bool write_key(DLTXKey *k, FILE *out) {
 
 bool write_section(DLTXSection *s, FILE *out) {
 	fprintf(out, "[%s]\r\n", s->name);
-	dynarray_foreach(s->keys, (bool (*)(void*, void*))&write_key, out);
+	dynarray_foreach(s->keys, (dynarray_cb)&write_key, out);
 	fprintf(out, " \r\n");
 
 	return true;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 		return -err;
 	}
 
-	dynarray_foreach(ini->sections, (bool (*)(void*, void*))write_cb, stdout);
+	dynarray_foreach(ini->sections, (dynarray_cb)write_cb, stdout);
 
 	free_dltx(ini);
 	return 0;

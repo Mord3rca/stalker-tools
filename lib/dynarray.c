@@ -26,7 +26,7 @@ void free_dynarray(struct dynarray *o, void (*free_item)(void*)) {
 	free(o);
 }
 
-void dynarray_foreach(struct dynarray *array, bool (*callback)(void*, void*), void* data) {
+void dynarray_foreach(struct dynarray *array, dynarray_cb callback, void* data) {
 	void **cur, **end;
 
 	for (cur = array->arr, end = array->arr + array->size; cur < end; cur++)
@@ -99,12 +99,12 @@ static bool _dynarray_find_iterator(void *o, struct _find_iterator_args *args) {
 	return true;
 }
 
-void *dynarray_find(struct dynarray *array, bool (*callback)(void*, void*), void *data) {
+void *dynarray_find(struct dynarray *array, dynarray_cb callback, void *data) {
 	struct _find_iterator_args args;
 	args.data = data;
 	args.result = NULL;
 	args.callback = callback;
 
-	dynarray_foreach(array, (bool (*)(void*,void*))&_dynarray_find_iterator, (void*)&args);
+	dynarray_foreach(array, (dynarray_cb)&_dynarray_find_iterator, (void*)&args);
 	return args.result;
 }
