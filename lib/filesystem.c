@@ -117,11 +117,10 @@ void filesystem_path_tolower(char path[]) {
 }
 
 char *filesystem_path_append(const char *path, const char *file) {
-	char *r = calloc(sizeof(char), PATH_MAX);
+	char r[PATH_MAX] = {0};
 	char p[PATH_MAX] = {0};
 
 	strcpy(p, path);
-	memset(r, 0, PATH_MAX);
 	strcpy(r, dirname(p));
 
 	strcat(r, "/");
@@ -129,7 +128,7 @@ char *filesystem_path_append(const char *path, const char *file) {
 
 	filesystem_to_system_path(r);
 
-	return r;
+	return strdup(r);
 }
 
 
