@@ -9,8 +9,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "dltx.h"
 #include "dynarray.h"
 #include "filesystem.h"
+#include "utils.h"
 
 struct filesystem_path_key {
 	char *key;
@@ -21,74 +23,139 @@ struct filesystem_path_key {
 };
 
 typedef struct {
-	struct filesystem_path_key **keys;
+	struct dynarray *keys;
 } _filesystem_internal;
 
 static _filesystem_internal _fs;
 
-static char _init_buffer[PATH_MAX + 1];
-static size_t _approot_size;
+static const struct filesystem_path_key *_filesystem_get_key(const char key[]) {
+	size_t len = strlen(key);
+	const struct filesystem_path_key *k = NULL;
 
-static struct filesystem_path_key *_create_fs_key(const char name[], const char path[], unsigned char flags) {
-	size_t path_size = 0;
-	struct filesystem_path_key *r = malloc(sizeof(struct filesystem_path_key));
+	DYNARRAY_INLINE_FOREACH(_fs.keys, const struct filesystem_path_key) {
+		if (len != (*it)->key_size)
+			continue;
 
-	if (path) {
-		path_size = strlen(path);
-		memcpy(_init_buffer + _approot_size, path, path_size);
+		if (strncmp(key, (*it)->key, len) != 0)
+			continue;
+
+		k = *it;
+		break;
 	}
-	*(_init_buffer + _approot_size + path_size) = 0;
+	return k;
+}
 
-	r->key = strdup(name);
-	r->key_size = strlen(r->key);  // Will be used for quick matching
-	r->value = strdup(_init_buffer);
-	r->flags = flags;
+static struct filesystem_path_key *_create_fs_root(const char fsgame[]) {
+	char buffer[PATH_MAX + 1] = {0};
+	struct filesystem_path_key *r = NULL;
+
+	strncpy(buffer, fsgame, PATH_MAX);
+	dirname(buffer);
+	strcat(buffer, "/");
+
+	r = malloc(sizeof(struct filesystem_path_key));
+	r->key = strdup("$fs_root$");
+	r->key_size = strlen(r->key);
+	r->value = strdup(buffer);
+	r->flags = 0;
 
 	return r;
 }
 
-int filesystem_init(void) {
-	// Create fsgame.ltx keys statically
-	// TODO: Read fsgame.ltx if exist
-	// (need to rework a bit DLTX since file define only orphan keys)
-	size_t i;
-	struct dynarray *dyn = dynarray_create(16);
+static struct filesystem_path_key *_create_fs_key(const char name[], const char root[], const char add[], unsigned char flags) {
+	char buffer[PATH_MAX + 1] = {0};
+	struct filesystem_path_key *r = NULL;
+	const struct filesystem_path_key *rkey = NULL;
 
-	getcwd(_init_buffer, PATH_MAX);  // No trailing /
-	_approot_size = strlen(_init_buffer);
-	_init_buffer[_approot_size++] = '/';
+	if (root) {
+		rkey = _filesystem_get_key(root);
+		if (!rkey)
+			goto create_fs_end;
+
+		strcat(buffer, rkey->value);
+	}
+
+	if (add) {
+		if (*buffer && buffer[strlen(buffer) -1] != '/')
+			strcat(buffer, "/");
+
+		strcat(buffer, add);
+	}
+
+	filesystem_to_system_path(buffer);
+
+	r = malloc(sizeof(struct filesystem_path_key));
+	r->key = strdup(name);
+	r->key_size = strlen(r->key);  // Will be used for quick matching
+	r->value = strdup(buffer);
+	r->flags = flags;
+
+create_fs_end:
+	return r;
+}
+
+static bool _section_iterator(const DLTXKey *key, void *__args) {
+	size_t ts;
+	char *s, **t;
+	unsigned char f = 0;
+
+	if (_filesystem_get_key(key->name))
+		return true;
+
+	s = strdup(key->value);
+	t = split(s, "|", &ts);
+
+	if (ts < 4)
+		goto it_cleanup;
+
+	if (parse_bool(t[0]))
+		f |= 0x01; // recurs
+	if (parse_bool(t[1]))
+		f |= 0x02; // notif
+
+	dynarray_insert(_fs.keys, _create_fs_key(key->name, t[2], t[3], f));
+
+it_cleanup:
+	free(t);
+	free(s);
+	return true;
+}
+
+int filesystem_init(const char fsgame[]) {
+	DLTX *dltx;
+	DLTXSection *sec;
+	DLTX_RETURN_CODE dltx_err;
+
+	dltx = dltx_create_from_file(fsgame, &dltx_err);
+	if (!dltx)
+		return 1;
+
+	sec = dltx_find_section(dltx, "__default__");
+
+	// +1 for $fs_root$
+	_fs.keys = dynarray_create(sec->keys->size + 1);
 
 	// See <path/to/Anomaly>/fsgame.ltx for more info
-	dynarray_insert(dyn, _create_fs_key("$fs_root$", NULL, 0));
-	dynarray_insert(dyn, _create_fs_key("$app_data_root$", "appdata/", 0));
-	dynarray_insert(dyn, _create_fs_key("$arch_dir$", "db/", 0));
-	dynarray_insert(dyn, _create_fs_key("$arch_dir_configs$", "db/configs/", 0));
-	dynarray_insert(dyn, _create_fs_key("$arch_dir_maps$", "db/levels/", 0));
-	dynarray_insert(dyn, _create_fs_key("$game_data$", "gamedata/", 0));
-	// TODO: Complete this for now, $fs_root$ & $gamedata$ is enough
+	//dynarray_insert(_fs.keys, _create_fs_key("$fs_root$", NULL, NULL, 0)); // Special case
+	dynarray_insert(_fs.keys, _create_fs_root(fsgame)); // Special case
+	dynarray_insert(_fs.keys, _create_fs_key("$game_data$", "$fs_root$", "gamedata/", 3));
 
-	// Copy allocated struct to keys
-	_fs.keys = calloc(sizeof(struct filesystem_path_key*), dyn->size + 1);
-	for (i=0; i < dyn->size; i++)
-		_fs.keys[i] = dyn->arr[i];
-	_fs.keys[i++] = NULL;
+	if (sec)
+		dynarray_foreach(sec->keys, (dynarray_cb)&_section_iterator, NULL);
 
-	free_dynarray(dyn, NULL);
-
+	free_dltx(dltx);
 	return 0;
+}
+
+static void _fs_free_key(struct filesystem_path_key *k) {
+	free(k->key);
+	free(k->value);
+	free(k);
 }
 
 __attribute__((destructor))
 void filesystem_cleanup(void) {
-	size_t i;
-
-	if (!_fs.keys) return;
-
-	for (i=0; _fs.keys[i]; i++) {
-		free(_fs.keys[i]->key);
-		free(_fs.keys[i]->value);
-	}
-	free(_fs.keys);
+	free_dynarray(_fs.keys, (dynarray_free_cb)&_fs_free_key);
 }
 
 void filesystem_to_system_path(char path[]) {
@@ -213,19 +280,16 @@ int filesystem_create_directory(const char dir[]) {
 }
 
 static const char *_filesystem_get_value(const char *start, const char *end) {
-	size_t len = end - start + 1;
-	struct filesystem_path_key **k;
+	char key[256] = {0};
+	const struct filesystem_path_key *k;
 
-	for (k=_fs.keys; *k; k++) {
-		if (len != (*k)->key_size)
-			continue;
+	if ((end - start) > 256)
+		return NULL;
 
-		if (strncmp(start, (*k)->key, len) != 0)
-			continue;
+	memcpy(key, start, end - start + 1);
 
-		break;
-	}
-	return *k ? (*k)->value : ".";
+	k = _filesystem_get_key(key);
+	return k ? k->value : ".";
 }
 
 char *filesystem_resolve_path(const char path[]) {
