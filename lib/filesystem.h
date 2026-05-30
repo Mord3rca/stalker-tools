@@ -9,7 +9,7 @@ typedef enum {
 	FS_GENERIC_ERROR,
 } fs_return_code;
 
-int  filesystem_init(void);
+int  filesystem_init(const char[]);
 void filesystem_cleanup(void);
 
 char *filesystem_path_append(const char[], const char[]);
