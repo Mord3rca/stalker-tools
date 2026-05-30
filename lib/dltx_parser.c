@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <limits.h>
 #include <regex.h>
 #include <stdarg.h>
@@ -10,6 +9,7 @@
 #include "dltx_parser.h"
 #include "dynarray.h"
 #include "filesystem.h"
+#include "utils.h"
 
 const size_t dltx_parser_buffer_size = 256*1024;
 const size_t dltx_parser_max_inheritence = 16;
@@ -23,32 +23,6 @@ const char dltx_section_regex_pattern[] = "([!@]{0,2})\\[([[:graph:]]*)\\](:([0-
 regex_t dltx_key_regex;
 regex_t dltx_include_regex;
 regex_t dltx_section_regex;
-
-char* _rstrip(char *s) {
-	char *cur, *end;
-	size_t l = strlen(s);
-
-	for(cur = s, end = s + l; cur < end && isspace(*cur); *(cur++) = 0);
-
-	return cur != end ? cur : NULL;
-}
-
-char *_lstrip(char *s) {
-	char *cur, *end;
-	size_t l = strlen(s) - 1;
-
-	for(cur = s + l, end = s; cur > end && isspace(*cur); *(cur--) = 0);
-
-	return cur != end ? s : NULL;
-}
-
-char *_strip(char *s) {
-	s = _rstrip(s);
-	if (s)
-		_lstrip(s);
-
-	return s;
-}
 
 DLTX_RETURN_CODE dltx_parser_init(void) {
 	if (regcomp(&dltx_key_regex, dltx_key_regex_pattern, REG_EXTENDED) != 0)
@@ -177,7 +151,7 @@ static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) 
 		if (token == NULL)
 			break;
 
-		token = _strip(token);
+		token = strip(token);
 		if (!token)
 			continue;
 
@@ -337,7 +311,7 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 		return;
 
 	// Avoid blank lines
-	line = _strip(line);
+	line = strip(line);
 	if (line == NULL)
 		return;
 
