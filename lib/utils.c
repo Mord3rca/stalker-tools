@@ -51,3 +51,7 @@ char **split(char *str, const char *delims, size_t *size) {
 	free_dynarray(dyn, NULL);
 	return result;
 }
+
+bool parse_bool(const char *str) {
+	return strcmp(str, "true") == 0;
+}
