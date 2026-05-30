@@ -12,6 +12,9 @@ struct dynarray {
 typedef bool (*dynarray_cb)(void*, void*);
 typedef void (*dynarray_free_cb)(void*);
 
+#define DYNARRAY_INLINE_FOREACH(D, T) \
+	for(T **it = (T**)D->arr, **itend = (T**)(D->arr + D->size); it < itend; it++)
+
 struct dynarray *dynarray_create(int);
 void free_dynarray(struct dynarray*, dynarray_free_cb);
 

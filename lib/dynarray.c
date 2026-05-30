@@ -18,6 +18,8 @@ static bool _free_iterator(void *m, void (*free_callback)(void*)) {
 }
 
 void free_dynarray(struct dynarray *o, void (*free_item)(void*)) {
+	if (!o) return;
+
 	if (free_item != NULL) {
 		dynarray_foreach(o, (bool (*)(void*, void*))&_free_iterator, free_item);
 	}
