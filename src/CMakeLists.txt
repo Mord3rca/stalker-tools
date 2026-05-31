@@ -1,29 +1,20 @@
-project(dltx-reader)
+FILE(GLOB execsources *.c)
 
-add_executable(${PROJECT_NAME})
+foreach(source ${execsources})
+    get_filename_component(pname ${source} NAME_WE)
 
-target_link_libraries(${PROJECT_NAME} ${GLOBAL_NAME})
+    project(${pname})
 
-add_compile_options(
-    -Wall
-    $<$<CONFIG:DEBUG>:-g>
-)
+    add_executable(${PROJECT_NAME})
 
-target_sources(${PROJECT_NAME} PRIVATE dltx-reader.c)
+    target_link_libraries(${PROJECT_NAME} ${GLOBAL_NAME})
 
-install(TARGETS ${PROJECT_NAME})
+    add_compile_options(
+        -Wall
+        $<$<CONFIG:DEBUG>:-g>
+    )
 
-project(xdb)
+    target_sources(${PROJECT_NAME} PRIVATE ${source})
 
-add_executable(${PROJECT_NAME})
-
-target_link_libraries(${PROJECT_NAME} ${GLOBAL_NAME})
-
-add_compile_options(
-    -Wall
-    $<$<CONFIG:DEBUG>:-g>
-)
-
-target_sources(${PROJECT_NAME} PRIVATE xdb.c)
-
-install(TARGETS ${PROJECT_NAME})
+    install(TARGETS ${PROJECT_NAME})
+endforeach()
