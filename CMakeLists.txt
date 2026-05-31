@@ -12,6 +12,8 @@ set(ENABLE_DLTX_TRACE OFF CACHE BOOL "Enable Trace capability for DLTX parsing")
 
 include(GNUInstallDirs)
 
+find_package(PkgConfig REQUIRED)
+
 if (${ENABLE_DLTX_TRACE})
     add_definitions( -DDLTX_TRACE )
 endif()

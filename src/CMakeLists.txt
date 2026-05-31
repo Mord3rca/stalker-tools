@@ -7,7 +7,7 @@ foreach(source ${execsources})
 
     add_executable(${PROJECT_NAME})
 
-    target_link_libraries(${PROJECT_NAME} ${GLOBAL_NAME})
+    target_link_libraries(${PROJECT_NAME} ${GLOBAL_NAME}_shared)
 
     add_compile_options(
         -Wall
