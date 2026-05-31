@@ -275,8 +275,21 @@ int filesystem_create_directory(const char dir[]) {
 		it++;
 	}
 
+	// In case end char is not / ... If it was, this does nothing
+	r = mkdir(itstart, S_IRWXU);
+	r = (errno == EEXIST ? 0 : r);
+
 	free(itstart);
 	return r;
+}
+
+int filesystem_create_subdir(const char path[]) {
+	char pdir[PATH_MAX] = {0};
+
+	memcpy(pdir, path, strlen(path));
+	dirname(pdir);
+
+	return filesystem_create_directory(pdir);
 }
 
 static const char *_filesystem_get_value(const char *start, const char *end) {

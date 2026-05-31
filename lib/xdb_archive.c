@@ -268,6 +268,9 @@ static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *a
 
 	// Check CRC
 
+	// Make sure DIR exist
+	filesystem_create_subdir(entry->path);
+
 	out = fopen(entry->path, "w");
 	if (!out) {
 		args->r = 1;
