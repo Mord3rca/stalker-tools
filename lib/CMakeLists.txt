@@ -5,12 +5,15 @@ add_library(${PROJECT_NAME} OBJECT)
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
-
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+pkg_search_module(LZO REQUIRED IMPORTED_TARGET lzo2)
+
 target_compile_options(
     ${PROJECT_NAME} BEFORE PRIVATE
     -Wall
     $<$<CONFIG:BEBUG>:-g>
+    ${LZO_CFLAGS}
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${sources})
@@ -21,14 +24,14 @@ target_sources(
 )
 
 add_library(${PROJECT_NAME}_shared SHARED)
-target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${PROJECT_NAME} PRIVATE PkgConfig::LZO)
 set_target_properties(${PROJECT_NAME}_shared PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME}_shared PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 set_target_properties(${PROJECT_NAME}_shared PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 install(TARGETS ${PROJECT_NAME}_shared)
 
 add_library(${PROJECT_NAME}_static STATIC)
-target_link_libraries(${PROJECT_NAME}_static PUBLIC ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME}_static PUBLIC ${PROJECT_NAME} PRIVATE PkgConfig::LZO)
 set_target_properties(${PROJECT_NAME}_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 install(TARGETS ${PROJECT_NAME}_static)
 
