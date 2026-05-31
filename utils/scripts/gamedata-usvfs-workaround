@@ -27,13 +27,10 @@ while read -r mod; do
 	cp -a "${gamma_dir}/mods/${mod#+}/gamedata/configs" "${dest_dir}/gamedata"
 done < <(tac "${gamma_dir}/profiles/G.A.M.M.A/modlist.txt")
 
-(
-	cd "${anomaly_dir}" || exit 1
+for db in "${anomaly_dir}/db/configs/"*.db0; do
+	xdb -xf "${db}" -C "${dest_dir}/extract"
+done &>/dev/null
 
-	for db in db/configs/*.db0; do
-		wine tools/converter.exe -xdb "${db}" -dir "${dest_dir}/extract"
-	done &>/dev/null
-)
 cp -r --update=none "${dest_dir}/extract/configs"/* "${dest_dir}/gamedata/configs"
 
 echo "Config ready in: ${dest_dir}/gamedata/configs/system.ltx"
