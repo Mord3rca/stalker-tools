@@ -1,3 +1,4 @@
+#include <lzo1x.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -218,18 +219,25 @@ typedef struct {
 	long foffset;
 } extract_all_args;
 
+static void _free_attrib(char **p) {
+	if (!p) return;
+	free(*p);
+}
+
+static void _close_file(FILE **f) {
+	if (!f || !(*f)) return;
+
+	fclose(*f);
+}
+
 static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *args) {
-	FILE *out;
-	size_t poffset = entry->ptr - args->foffset;
+	size_t size, poffset = entry->ptr - args->foffset;
+	FILE *out __attribute__((cleanup(_close_file))) = NULL;
+	char *buffer __attribute__((cleanup(_free_attrib))) = NULL;
 
 	if (entry->real_size == 0 && entry->ptr == 0) {
 		args->r = filesystem_create_directory(entry->path);
 		return args->r == 0;
-	}
-
-	if (entry->real_size != entry->comp_size) {
-		fprintf(stderr, "WARN: Compression not supported, skipping %s\n", entry->path);
-		return true;
 	}
 
 	if (poffset < 0) {
@@ -243,6 +251,21 @@ static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *a
 		return false;
 	}
 
+	size = entry->real_size;
+
+	if (entry->real_size != entry->comp_size) {
+		buffer = malloc(size);
+		// TODO: Better workaround (after huffman rewrite ?)
+		if (lzo1x_decompress((lzo_bytep)args->data + poffset, entry->comp_size, (lzo_bytep)buffer, &size, NULL) != 0 ) {
+			args->r = 1;
+			return false;
+		}
+
+		if (size != entry->real_size) {
+			fprintf(stderr, "SIZE MISMATCH FOR %s\n", entry->path);
+		}
+	}
+
 	// Check CRC
 
 	out = fopen(entry->path, "w");
@@ -250,8 +273,7 @@ static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *a
 		args->r = 1;
 		return false;
 	}
-	fwrite(args->data + poffset, entry->comp_size, 1, out);
-	fclose(out);
+	fwrite(buffer ? buffer : (char*)(args->data + poffset), size, 1, out);
 
 	return args->r == 0;
 }
@@ -277,6 +299,7 @@ int xdb_extract_all(xdb *archive, const char path[]) {
 		return 1;
 	}
 
+	args.r = 0;
 	args.target = path;
 	args.foffset = cdata->fpos;
 	dynarray_foreach(metadata, (dynarray_cb)&_xdb_extract_iterator, &args);
