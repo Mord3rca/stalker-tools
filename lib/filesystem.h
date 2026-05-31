@@ -20,6 +20,7 @@ void filesystem_path_tolower(char[]);
 void filesystem_to_system_path(char[]);
 
 int filesystem_create_directory(const char[]);
+int filesystem_create_subdir(const char[]);
 
 char *filesystem_resolve_path(const char[]);
 
