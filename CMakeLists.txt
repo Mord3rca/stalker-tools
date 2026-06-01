@@ -19,4 +19,5 @@ if (${ENABLE_DLTX_TRACE})
 endif()
 
 add_subdirectory("lib/stcore")
+add_subdirectory("lib/stfs")
 add_subdirectory("src/")
