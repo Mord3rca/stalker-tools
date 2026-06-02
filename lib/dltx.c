@@ -7,6 +7,8 @@
 #include "dltx.h"
 #include "dltx_parser.h"
 
+DLTX_RETURN_CODE dltx_init_code = NO_ERROR;
+
 const size_t dltx_default_key_array_size = 128;
 const size_t dltx_default_section_array_size = 32;
 
@@ -49,12 +51,13 @@ const char *dltx_return_code_to_str(DLTX_RETURN_CODE err) {
 	}
 }
 
-DLTX_RETURN_CODE dltx_init(void) {
-	return dltx_parser_init();
+__attribute__((constructor))
+static void dltx_init(void) {
+	dltx_init_code = dltx_parser_init();
 }
 
 __attribute__((destructor))
-void dltx_cleanup(void) {
+static void dltx_cleanup(void) {
 	dltx_parser_cleanup();
 }
 

@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	if (dltx_init() != NO_ERROR) {
+	if (dltx_init_code != NO_ERROR) {
 		puts("Failed to init DLTX library");
 		return -1;
 	}
