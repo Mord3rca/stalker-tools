@@ -4,10 +4,10 @@ A set of tools used for S.T.A.L.K.E.R.'s gamefile manipulation
 
 ## dltx-reader
 
-Parse a S.T.A.L.K.E.R. DLTX file and spit it out on stdout a ConfigParser.
+Parse & resolve a S.T.A.L.K.E.R. DLTX file and spit it out
+on stdout as a ConfigParser compatible INI file.
 
 The result can be parsed by Python with:
-
 ```python
 from configparser import ConfigParser
 
@@ -15,9 +15,9 @@ ini = ConfigParser()
 ini.read('/path/to/file')
 ```
 
-### Limitation
+## stfsmount
 
-For now, case sensitivity is an issue and depend of your filesystem ...
+Mount internal Stalker Filesystem with FUSE to a directory
 
 ## xdb
 
