@@ -8,7 +8,7 @@
 
 #include "dltx.h"
 #include "dynarray.h"
-#include "xdb_archive.h"
+#include "xdb.h"
 
 static const char opts[] = "C:Hxf:hvt";
 static const struct option lopts[] = {

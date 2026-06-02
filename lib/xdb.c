@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xdb_archive.h"
 #include "filesystem.h"
 #include "huffman.h"
+#include "xdb.h"
 
 // XDB CHUNK
 
