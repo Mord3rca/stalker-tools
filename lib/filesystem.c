@@ -251,12 +251,32 @@ char *filesystem_get_modfile_glob_path(const char path[]) {
 	return temp;
 }
 
+char *filesystem_canonicalize_directory(const char dir[]) {
+	char *cdir = NULL;
+	size_t sdir = strlen(dir);
+
+	if (sdir > PATH_MAX)
+		return NULL;
+
+	// Nothing to do
+	if (*(dir + sdir - 1) == '/') {
+		return strdup(dir);
+	}
+
+	cdir = malloc(PATH_MAX + 1);
+	memcpy(cdir, dir, sdir);
+	cdir[sdir++] = '/';
+	cdir[sdir++] = 0;
+
+	return cdir;
+}
+
 int filesystem_create_directory(const char dir[]) {
 	int r;
 	char *it, *itstart, *itend;
 
-	itstart = it = strdup(dir);
-	itend = itstart + strlen(dir);
+	itstart = it = filesystem_canonicalize_directory(dir);
+	itend = itstart + strlen(itstart);
 
 	while (it < itend) {
 		if (*it != '/') {
@@ -275,18 +295,18 @@ int filesystem_create_directory(const char dir[]) {
 		it++;
 	}
 
-	// In case end char is not / ... If it was, this does nothing
-	r = mkdir(itstart, S_IRWXU);
-	r = (errno == EEXIST ? 0 : r);
-
 	free(itstart);
 	return r;
 }
 
-int filesystem_create_subdir(const char path[]) {
-	char pdir[PATH_MAX] = {0};
+int filesystem_create_subdir(const char file[]) {
+	char pdir[PATH_MAX + 1] = {0};
+	size_t sfile = strlen(file);
 
-	memcpy(pdir, path, strlen(path));
+	if (sfile > PATH_MAX)
+		return -1;
+
+	memcpy(pdir, file, sfile);
 	dirname(pdir);
 
 	return filesystem_create_directory(pdir);
