@@ -18,6 +18,27 @@ target_sources(${PROJECT_NAME} PRIVATE dltx-reader.c)
 install(TARGETS ${PROJECT_NAME})
 
 # =========================
+# ========= stfsmount =========
+# =========================
+
+project(stfsmount)
+
+add_executable(${PROJECT_NAME})
+
+pkg_search_module(FUSE REQUIRED IMPORTED_TARGET fuse3)
+
+target_link_libraries(${PROJECT_NAME} stcore_shared PkgConfig::FUSE)
+
+add_compile_options(
+    -Wall
+    $<$<CONFIG:DEBUG>:-g>
+)
+
+target_sources(${PROJECT_NAME} PRIVATE stfsmount.c)
+
+install(TARGETS ${PROJECT_NAME})
+
+# =========================
 # ========== xdb ==========
 # =========================
 
