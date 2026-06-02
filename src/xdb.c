@@ -158,7 +158,7 @@ int main (int argc, char *argv[]) {
 		return 1;
 	}
 
-	if (dltx_init() != NO_ERROR) {
+	if (dltx_init_code != NO_ERROR) {
 		fprintf(stderr, "ERR: failed to init dltx library\n");
 		return 1;
 	}

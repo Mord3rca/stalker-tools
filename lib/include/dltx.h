@@ -22,8 +22,7 @@ typedef enum {
 
 const char *dltx_return_code_to_str(DLTX_RETURN_CODE);
 
-DLTX_RETURN_CODE dltx_init(void);
-void dltx_cleanup(void);
+extern DLTX_RETURN_CODE dltx_init_code;
 
 typedef struct {
 	char *name;
