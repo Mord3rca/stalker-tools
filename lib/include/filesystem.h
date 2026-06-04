@@ -30,4 +30,6 @@ int filesystem_create_subdir(const char[]);
 
 char *filesystem_resolve_path(const char[]);
 
+struct dynarray *filesystem_list_files(const char[], int);
+
 #endif  // _FILESSYTEM_HEADER
