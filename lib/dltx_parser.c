@@ -254,7 +254,7 @@ void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) 
 void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 	DLTX_RETURN_CODE err;
 	char *from = root->cur_file_path;
-	char *to = filesystem_path_append(from, path);
+	char *to = filesystem_path_append2(from, path);
 	size_t sline = root->cur_line;
 
 	err = dltx_parser_process_file(root, to);
@@ -272,7 +272,7 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]) {
 	fs_return_code err;
 	char **paths = NULL;
-	char *to = filesystem_path_append(root->cur_file_path, path);
+	char *to = filesystem_path_append2(root->cur_file_path, path);
 
 	err = filesystem_glob(to, root->cur_file_path, &paths);
 	if (err != FS_NO_ERROR) {
