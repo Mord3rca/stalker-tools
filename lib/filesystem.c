@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <glob.h>
 #include <libgen.h>
@@ -10,7 +11,6 @@
 #include <unistd.h>
 
 #include "dltx.h"
-#include "dynarray.h"
 #include "filesystem.h"
 #include "utils.h"
 
@@ -183,19 +183,37 @@ void filesystem_path_tolower(char path[]) {
 	}
 }
 
-char *filesystem_path_append(const char *path, const char *file) {
-	char r[PATH_MAX] = {0};
-	char p[PATH_MAX] = {0};
+char *filesystem_path_append(const char p1[], const char p2[]) {
+	char *c;
+	char r[PATH_MAX + 1] = {0};
 
-	strcpy(p, path);
-	strcpy(r, dirname(p));
+	c = stpcpy(r, p1);
+	if (*(c - 1) != '/')
+		*(c++) = '/';
 
-	strcat(r, "/");
-	strcat(r, file);
-
-	filesystem_to_system_path(r);
+	stpcpy(c, p2);
 
 	return strdup(r);
+}
+
+// TODO: Better name
+char *filesystem_path_append2(const char path[], const char file[]) {
+	size_t l;
+	char *d, p[PATH_MAX + 1] = {0};
+
+	strcpy(p, path);
+	dirname(p);
+	l = strlen(p);
+	for (d = p+l+1; *d; d++)
+		*d = 0;
+
+	*(p + l++) = '/';
+
+	strcat(p + l, file);
+
+	filesystem_to_system_path(p);
+
+	return strdup(p);
 }
 
 
