@@ -1,6 +1,8 @@
 #ifndef _DLTX_HEADER
 #define _DLTX_HEADER
 
+#include <stdio.h>
+
 #include "dynarray.h"
 
 #define DLTX_READONLY	1 << 0
@@ -111,5 +113,7 @@ void dltx_set_readonly(DLTX*, bool);
 void dltx_set_strict_mode(DLTX*, bool);
 
 void dltx_sort(DLTX*);
+
+int dltx_save_to_file(DLTX*, FILE*);
 
 #endif //_DLTX_HEADER

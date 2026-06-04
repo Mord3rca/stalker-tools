@@ -423,3 +423,26 @@ void dltx_sort(DLTX* root) {
 	qsort(root->sections->arr, root->sections->size, sizeof(DLTXSection*), (int (*)(const void*, const void*))&_dltx_section_name_cmp);
 	root->flags |= DLTX_SORTED;
 }
+
+static void _print_all_keys(DLTXSection *s, FILE *out) {
+	const char *v;
+	DYNARRAY_INLINE_FOREACH(s->keys, DLTXKey) {
+		v = (*it)->value;
+		fprintf(out, "%s = %s\n", (*it)->name, v ? v : "");
+	}
+}
+
+int dltx_save_to_file(DLTX *root, FILE *out) {
+	if (!root)
+		return 1;
+
+	out = out ? out : stdout;
+
+	DYNARRAY_INLINE_FOREACH(root->sections, DLTXSection) {
+		fprintf(out, "[%s]\n", (*it)->name);
+		_print_all_keys(*it, out);
+		fprintf(out, "\n");
+	}
+
+	return 0;
+}
