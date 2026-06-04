@@ -366,3 +366,56 @@ char *filesystem_resolve_path(const char path[]) {
 
 	return strdup(wbuff);
 }
+
+static int _fs_filter_dot_dir(const struct dirent *d) {
+	if (!(d->d_type & DT_DIR))
+		return 1;
+
+	return strcmp(d->d_name, ".") != 0 && strcmp(d->d_name, "..") != 0;
+}
+
+static int _fs_read_directory_content(struct dynarray *dyn, const char path[], int depth, int mdepth) {
+	int l, r = 0;
+	char *npath;
+	struct dirent **files, **it, **itend;
+
+	if (mdepth != -1 && depth >= mdepth)
+		return 0;
+
+	l = scandir(path, &files, &_fs_filter_dot_dir, NULL);
+	if (l < 0) {
+		fprintf(stderr, "scandir() failed: %m\n");
+		return 1;
+	}
+
+	for (it = files, itend = files + l; it < itend; it++) {
+		if ((*it)->d_type != DT_DIR) {
+			dynarray_insert(dyn, filesystem_path_append(path, (*it)->d_name));
+			continue;
+		}
+
+		npath = filesystem_path_append(path, (*it)->d_name);
+		r = _fs_read_directory_content(dyn, npath, depth + 1, mdepth);
+
+		free(npath);
+
+		if (r != 0)
+			break;
+
+		continue;
+	}
+
+	free(files);
+	return r;
+}
+
+struct dynarray *filesystem_list_files(const char path[], int mdepth) {
+	struct dynarray *dyn = dynarray_create(24);
+
+	if (_fs_read_directory_content(dyn, path, 0, mdepth) != 0) {
+		free_dynarray(dyn, (dynarray_free_cb)&free);
+		return NULL;
+	}
+
+	return dyn;
+}
