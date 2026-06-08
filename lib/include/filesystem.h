@@ -23,6 +23,7 @@ void filesystem_path_tolower(char[]);
 
 void filesystem_to_system_path(char[]);
 
+char *filesystem_canonicalize_path(const char[]);
 char *filesystem_canonicalize_directory(const char[]);
 
 int filesystem_create_directory(const char[]);

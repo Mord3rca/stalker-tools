@@ -289,6 +289,34 @@ char *filesystem_canonicalize_directory(const char dir[]) {
 	return cdir;
 }
 
+char *filesystem_canonicalize_path(const char path[]) {
+	char *it;
+	const char *pcur, *pend;
+	char buffer[PATH_MAX + 1] = {0};
+
+	it = buffer;
+	pcur = path;
+	pend = path + strlen(path);
+
+	while(pcur < pend) {
+		switch(*pcur) {
+		case '.':
+			if (*(pcur+1) == '/')
+				pcur++;
+			else
+				*(it++) = '.';
+			break;
+		case '\\':
+			*(it++) = '/';
+			break;
+		default:
+			*(it++) = *pcur;
+		}
+		pcur++;
+	}
+	return strdup(buffer);
+}
+
 int filesystem_create_directory(const char dir[]) {
 	int r;
 	char *it, *itstart, *itend;
