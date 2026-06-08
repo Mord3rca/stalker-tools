@@ -44,6 +44,8 @@ typedef struct {
 
 void free_xdb_metadata_entry(xdb_metadata_entry*);
 
+#define XDB_METADATA_ENTRY_IS_DIR(e)	(e->real_size == 0 && e->ptr == 0)
+
 /*
  *  XDB DEFINITIONS
  */
