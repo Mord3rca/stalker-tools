@@ -5,7 +5,7 @@ set(GLOBAL_VERSION "0.0.1")
 
 project(
     ${GLOBAL_NAME} LANGUAGES C VERSION ${GLOBAL_VERSION}
-    DESCRIPTION "A collection of tools to manipulate/parser STALKER assets"
+    DESCRIPTION "A collection of tools to manipulate/parse STALKER assets"
 )
 
 set(ENABLE_DLTX_TRACE OFF CACHE BOOL "Enable Trace capability for DLTX parsing")

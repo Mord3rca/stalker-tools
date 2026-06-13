@@ -1,6 +1,8 @@
 FILE(GLOB sources *.c)
 FILE(GLOB includes include/*.h)
 
+project(stcore VERSION ${GLOBAL_VERSION})
+
 add_library(${PROJECT_NAME} OBJECT)
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
 
