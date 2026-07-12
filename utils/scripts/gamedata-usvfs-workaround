@@ -4,32 +4,35 @@ set -eu -o pipefail
 
 [ -v V ] && set -x
 
-if [ ! "${#}" -ge 2 ]; then
-	echo "Usage: ${0} <path/to/anomaly> <path/to/gamma> [<path/to/target>]" >&2
+if [ ! "${#}" -ge 1 ]; then
+	echo "Usage: ${0} <path/to/anomaly> [path/to/gamma] [path/to/target]" >&2
 	exit 1
 fi
 
 anomaly_dir="${1}"
-gamma_dir="${2}"
+gamma_dir="${2:-}"
 dest_dir="${3:-$(mktemp --directory --tmpdir dltx-read-XXXXXX)}"
 
 mkdir -p "${dest_dir}"/{gamedata,extract}
+trap 'rm -rf "${dest_dir}"' ERR
 trap 'rm -rf "${dest_dir}/extract"' EXIT
 
 # Preparing config folder
 cp -a "${anomaly_dir}/gamedata/configs/" "${dest_dir}/gamedata"
-while read -r mod; do
-	[[ "${mod}" == +* ]] || continue
+if [ -n "${gamma_dir}" ]; then
+	while read -r mod; do
+		[[ "${mod}" == +* ]] || continue
 
-	mod="${mod%%[[:cntrl:]]}"
-	[ -d "${gamma_dir}/mods/${mod#+}/gamedata/configs" ] || continue
+		mod="${mod%%[[:cntrl:]]}"
+		[ -d "${gamma_dir}/mods/${mod#+}/gamedata/configs" ] || continue
 
-	cp -a "${gamma_dir}/mods/${mod#+}/gamedata/configs" "${dest_dir}/gamedata"
-done < <(tac "${gamma_dir}/profiles/G.A.M.M.A/modlist.txt")
+		cp -a "${gamma_dir}/mods/${mod#+}/gamedata/configs" "${dest_dir}/gamedata"
+	done < <(tac "${gamma_dir}/profiles/G.A.M.M.A/modlist.txt")
+fi
 
 for db in "${anomaly_dir}/db/configs/"*.db0; do
 	xdb -xf "${db}" -C "${dest_dir}/extract"
-done &>/dev/null
+done >/dev/null
 
 cp -r --update=none "${dest_dir}/extract/configs"/* "${dest_dir}/gamedata/configs"
 
