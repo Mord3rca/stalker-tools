@@ -16,6 +16,10 @@
 #include "filesystem_path.h"
 #include "xdb.h"
 
+#if FUSE_MAJOR_VERSION == 3 && FUSE_MINOR_VERSION < 17
+#define FUSE_FILL_DIR_DEFAULTS 0
+#endif
+
 static struct options {
 	const char *stpath;
 	const char *stcache;
