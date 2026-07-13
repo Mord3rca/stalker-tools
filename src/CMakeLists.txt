@@ -21,7 +21,7 @@ install(TARGETS ${PROJECT_NAME})
 # ========= stfsmount =========
 # =========================
 
-if (!MSYS)
+if(NOT MSYS)
 
 project(stfsmount)
 
