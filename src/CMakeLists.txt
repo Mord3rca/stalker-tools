@@ -21,6 +21,8 @@ install(TARGETS ${PROJECT_NAME})
 # ========= stfsmount =========
 # =========================
 
+if (!MSYS)
+
 project(stfsmount)
 
 add_executable(${PROJECT_NAME})
@@ -37,6 +39,8 @@ add_compile_options(
 target_sources(${PROJECT_NAME} PRIVATE stfsmount.c)
 
 install(TARGETS ${PROJECT_NAME})
+
+endif()
 
 # =========================
 # ========== xdb ==========
