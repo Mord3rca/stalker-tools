@@ -1,8 +1,8 @@
 # =========================
-# ====== dltx-reader ======
+# ===== dltx-resolver =====
 # =========================
 
-project(dltx-reader)
+project(dltx-resolver)
 
 add_executable(${PROJECT_NAME})
 
@@ -13,7 +13,7 @@ add_compile_options(
     $<$<CONFIG:DEBUG>:-g>
 )
 
-target_sources(${PROJECT_NAME} PRIVATE dltx-reader.c)
+target_sources(${PROJECT_NAME} PRIVATE dltx-resolver.c)
 
 install(TARGETS ${PROJECT_NAME})
 
