@@ -2,7 +2,7 @@
 
 A set of tools used for S.T.A.L.K.E.R.'s gamefile manipulation
 
-## dltx-reader
+## dltx-resolver
 
 Parse & resolve a S.T.A.L.K.E.R. DLTX file and spit it out
 on stdout as a ConfigParser compatible INI file.

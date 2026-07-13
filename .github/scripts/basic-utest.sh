@@ -11,9 +11,9 @@ test_file() {
 	ifile="${1}"
 
 	if [ -v NO_VALGRIND ]; then
-		out/src/dltx-reader "tests/data/${ifile}" >"${wfile}"
+		out/src/dltx-resolver "tests/data/${ifile}" >"${wfile}"
 	else
-		valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/src/dltx-reader "tests/data/${ifile}" >"${wfile}"
+		valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/src/dltx-resolver "tests/data/${ifile}" >"${wfile}"
 	fi
 
 	read -r ihash _ < <(md5sum "tests/expected/${ifile}")

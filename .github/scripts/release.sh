@@ -18,7 +18,7 @@ run_msys() {
 	cd package || exit 1
 
 	cp /usr/bin/msys-2.0.dll .
-	cp ../out/src/dltx-reader .
+	cp ../out/src/dltx-resolver .
 
 	zip ../${output_name} *
 }
