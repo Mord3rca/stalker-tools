@@ -36,4 +36,8 @@ done >/dev/null
 
 cp -r --update=none "${dest_dir}/extract/configs"/* "${dest_dir}/gamedata/configs"
 
+# Required for stfsmount
+cp "${anomaly_dir}/fsgame.ltx" "${dest_dir}"
+mkdir "${dest_dir}/db"
+
 echo "Config ready in: ${dest_dir}/gamedata/configs/system.ltx"
