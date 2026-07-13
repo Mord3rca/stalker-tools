@@ -95,6 +95,7 @@ int stcore_filesystem_path_append(const stcore_filesystem_path src, stcore_files
 	if (src.scount > 0)
 		dst->last_sep_offset = dst->len + src.last_sep_offset;
 	dst->len += src.len;
+	dst->target[dst->len] = 0;
 
 	return 0;
 }
