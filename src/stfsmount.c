@@ -189,6 +189,11 @@ static int parse_db_overrides(void) {
 	char *t, *datapath = filesystem_resolve_path("$arch_dir$");
 
 	dbs = filesystem_list_files(datapath, -1);
+	if (!dbs) {
+		free(datapath);
+		return -1;
+	}
+
 	DYNARRAY_INLINE_FOREACH(dbs, const char) {
 		file = xdb_archive_open(*it);
 		if (!file)
