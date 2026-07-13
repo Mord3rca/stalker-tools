@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fuse.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -67,8 +68,21 @@ static const char stfs_default_cache_filename[] = ".stfs_cache.ini";
 typedef enum {
 	STFS_ITEM_DIR,
 	STFS_ITEM_LINK,
-	STFS_ITEM_DB_MEMBER,
+	STFS_ITEM_XDB_MEMBER,
 } stfs_item_type;
+
+typedef struct {
+	stcore_filesystem_path path;
+	xdb *handler;
+} stfs_xdb;
+
+typedef struct {
+	stfs_xdb *db;
+	char mname[1024];
+
+	size_t size;
+	char *buf;
+} stfs_xdb_member;
 
 typedef struct {
 	stfs_item_type type;
@@ -76,6 +90,7 @@ typedef struct {
 
 	union {
 		char *link;
+		stfs_xdb_member *mdb;
 		struct dynarray *dir_list;
 	} arg;
 } stfs_item;
@@ -83,18 +98,121 @@ typedef struct {
 static struct dynarray *fs_dirs;
 static struct dynarray *fs_items;
 
+static struct dynarray *dbs;
+
 static stcore_filesystem_path root_path;
 
-static void stfs_item_init(stfs_item *item, const char name[], const char value[]) {
+static stfs_item *stfs_item_create_link(const char name[]) {
+	stcore_filesystem_path p;
+	stfs_item *item = malloc(sizeof(stfs_item));
+
 	item->type = STFS_ITEM_LINK;
 
 	stcore_filesystem_path_init(&(item->fs_path), name);
 	stcore_filesystem_path_prepend(root_path, &(item->fs_path));
 
+	stcore_filesystem_path_init(&p, dltx_section_get_key(stfs_cfg, "wdir")->value);
+	stcore_filesystem_path_append(item->fs_path, &p);
+
 	for(char *i = item->fs_path.target; *i; i++)
 		*i = tolower(*i);
 
-	item->arg.link = value ? strdup(value) : NULL;
+	item->arg.link = strdup(p.target);
+	return item;
+}
+
+static stfs_xdb *stfs_xdb_get_handler(const char db[]) {
+	stfs_xdb *r = malloc(sizeof(stfs_xdb));
+
+	stcore_filesystem_path_init(&(r->path), db);
+	r->handler = NULL;
+
+	DYNARRAY_INLINE_FOREACH(dbs, stfs_xdb) {
+		if (stcore_filesystem_path_equal(r->path, (*it)->path)) {
+			free(r);
+			return *it;
+		}
+	}
+
+	dynarray_insert(dbs, r);
+	return r;
+}
+
+static void stfs_xdb_free(stfs_xdb *i) {
+	xdb_archive_close(i->handler);
+	free(i);
+}
+
+static stfs_xdb_member *stfs_xdb_member_create(const char db[], const char member[], const char msize[]) {
+	size_t size;
+	stfs_xdb_member *r = malloc(sizeof(stfs_xdb_member));
+
+	r->db = stfs_xdb_get_handler(db);
+	r->buf = NULL;
+
+	r->size = strtoul(msize, NULL, 10);
+
+	size = strlen(member);
+	if (size >= 1024) {
+		fprintf(stderr, "Member name to long (%s)\n", member);
+		free(r);
+		return NULL;
+	}
+	memcpy(r->mname, member, size);
+	r->mname[size] = 0;
+
+	return r;
+}
+
+static stfs_item *stfs_item_create_xdb_handler(const char name[], const char xdb_uri[]) {
+	char *uri;
+	char *elements[3];  // db / member / size
+	size_t i, j;
+	stfs_item *item = malloc(sizeof(stfs_item));
+	item->type = STFS_ITEM_XDB_MEMBER;
+
+	stcore_filesystem_path_init(&(item->fs_path), name);
+	stcore_filesystem_path_prepend(root_path, &(item->fs_path));
+
+	uri = strdup(xdb_uri);
+	elements[0] = uri;
+	for (i = 0, j = 1; uri[i]; i++)
+		if (uri[i] == ':') {
+			uri[i] = 0;
+			elements[j++] = uri + i + 1;
+		}
+
+	if (j != 3) {
+		fprintf(stderr, "MALFORMED XDB URI: %s\n", xdb_uri);
+		free(uri);
+		free(item);
+		return NULL;
+	}
+
+	item->arg.mdb = stfs_xdb_member_create(elements[0], elements[1], elements[2]);
+	if (!item->arg.mdb) {
+		free(uri);
+		free(item);
+		return NULL;
+	}
+
+	free(uri);
+	return item;
+}
+
+static stfs_item *stfs_item_create(const char path[], const char value[]) {
+	stfs_item *item = NULL;
+
+	if (!(value && (*value))) {
+		item = stfs_item_create_link(path);
+	} else if( value && strncmp(value, "xdb://", 6) == 0) {
+		item = stfs_item_create_xdb_handler(path, value + strlen("xdb://"));
+	} else {
+		return NULL;
+	}
+
+	dynarray_insert(fs_items, item);
+	return item;
 }
 
 static stfs_item *stfs_item_create_dir(const stcore_filesystem_path p) {
@@ -120,8 +238,15 @@ static void stfs_item_free(stfs_item *i) {
 	case STFS_ITEM_DIR:
 		free_dynarray(i->arg.dir_list, NULL);
 		break;
-	default:
+	case STFS_ITEM_LINK:
 		free(i->arg.link);
+		break;
+	case STFS_ITEM_XDB_MEMBER:
+		free(i->arg.mdb->buf);
+		free(i->arg.mdb);
+		break;
+	default:
+		fprintf(stderr, "stfs_item_free() error: Invalid type\n");
 	}
 
 	free(i);
@@ -168,7 +293,7 @@ static void _register_db_elements(xdb *f, DLTX *header) {
 
 		tmp = filesystem_path_append(rpath, (*it)->path);
 		cpath = filesystem_canonicalize_path(tmp);
-		snprintf(buffer, PATH_MAX * 2, "xdb://%s:%s", fpath, (*it)->path);
+		snprintf(buffer, PATH_MAX * 2, "xdb://%s:%s:%" PRIu32, fpath, (*it)->path, (*it)->real_size);
 
 		dltx_section_set_key(stfs_map, cpath, buffer);
 
@@ -282,9 +407,13 @@ static int stfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_i
 		stbuf->st_nlink = 2;
 		break;
 	case STFS_ITEM_LINK:
-	case STFS_ITEM_DB_MEMBER:
 		stbuf->st_mode = S_IFLNK | 0777;
 		stbuf->st_nlink = 1;
+		break;
+	case STFS_ITEM_XDB_MEMBER:
+		stbuf->st_mode = S_IFREG | 0544;
+		stbuf->st_nlink = 1;
+		stbuf->st_size = it->arg.mdb->size;
 		break;
 	default:
 		res = -ENOENT;
@@ -331,15 +460,63 @@ static int stfs_readlink(const char *fpath, char *target, size_t len) {
 }
 
 static int stfs_open(const char *fpath, struct fuse_file_info *fi) {
-	// TODO: NOT IMPLEMENTED
-	return -ENOENT;
+	const stfs_item *i;
+
+	if ((fi->flags & O_ACCMODE) != O_RDONLY)
+		return -EACCES;
+
+	i = stfs_find_item_by_path(fpath);
+	if (!i)
+		return -ENOENT;
+
+	if (i->type != STFS_ITEM_XDB_MEMBER)
+		return -EINVAL;
+
+	if (!i->arg.mdb->db->handler) {
+		i->arg.mdb->db->handler = xdb_archive_open(i->arg.mdb->db->path.target);
+	}
+
+	if (!i->arg.mdb->buf) {
+		i->arg.mdb->buf = xdb_archive_get_member_data(i->arg.mdb->db->handler, i->arg.mdb->mname, NULL);
+	}
+
+	return 0;
 }
 
-static int stfs_read(const char *path, char *buf, size_t size, off_t offset,
+static int stfs_release(const char *fpath, struct fuse_file_info *fi) {
+	stfs_item *it;
+
+	it = stfs_find_item_by_path(fpath);
+	if (!it) return 0;
+
+	free(it->arg.mdb->buf);
+	it->arg.mdb->buf = NULL;
+
+	return 0;
+}
+
+static int stfs_read(const char *fpath, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi)
 {
-	// TODO: NOT IMPLEMENTED
-	return -ENOENT;
+	size_t len;
+	const stfs_item *i;
+
+	i = stfs_find_item_by_path(fpath);
+	if (!i)
+		return -ENOENT;
+
+	if (i->type != STFS_ITEM_XDB_MEMBER)
+		return 0; // Nothing to read
+
+	len = i->arg.mdb->size;
+	if (offset < len) {
+		if (offset + size > len)
+			size = len - offset;
+		memcpy(buf, i->arg.mdb->buf + offset, size);
+	} else
+		size = 0;
+
+	return size;
 }
 
 static void *stfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
@@ -354,12 +531,14 @@ static void *stfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 static void stfs_destroy(void *_ /*unused*/) {
 	free_dynarray(fs_dirs, NULL);
 	free_dynarray(fs_items, (dynarray_free_cb)stfs_item_free);
+	free_dynarray(dbs, (dynarray_free_cb)stfs_xdb_free);
 }
 
 static const struct fuse_operations stfs_oper = {
 	.getattr = stfs_getattr,
 	.readlink = stfs_readlink,
 	.open = stfs_open,
+	.release = stfs_release,
 	.read = stfs_read,
 	.readdir = stfs_readdir,
 
@@ -430,19 +609,6 @@ static stfs_item *stfs_create_dir_if_dont_exist(const stcore_filesystem_path p) 
 	return i;
 }
 
-static char create_buffer[PATH_MAX];
-static const char *_stfs_create_arg_or_something(const char *arg, const char *p) {
-	if (arg && *arg != 0)
-		return arg;
-
-	memset(create_buffer, 0, PATH_MAX);
-
-	strcpy(create_buffer, dltx_section_get_key(stfs_cfg, "wdir")->value);
-	strcat(create_buffer, "/");
-	strcat(create_buffer, p);
-	return create_buffer;
-}
-
 static void stfs_create_fs_structure(DLTX *config) {
 	stfs_item *item, *dir;
 	const DLTXSection *mapping;
@@ -455,13 +621,13 @@ static void stfs_create_fs_structure(DLTX *config) {
 	fs_dirs = dynarray_create(128);
 	fs_items = dynarray_create(stfs_map->keys->size + 512); // Allocate member number + 512 dirs to be safe
 
+	dbs = dynarray_create(64);
+
 	stcore_filesystem_path_init(&fsroot, "/");
 	stfs_item_create_dir(fsroot);  // Create root
 
 	DYNARRAY_INLINE_FOREACH(mapping->keys, const DLTXKey) {
-		item = malloc(sizeof(stfs_item));
-		stfs_item_init(item, (*it)->name, _stfs_create_arg_or_something((*it)->value, (*it)->name));
-		dynarray_insert(fs_items, item);
+		item = stfs_item_create((*it)->name, (*it)->value);
 
 		stcore_filesystem_path_dirname(item->fs_path, &dirname);
 		dir = stfs_create_dir_if_dont_exist(dirname);
