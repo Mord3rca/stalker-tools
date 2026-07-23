@@ -74,6 +74,8 @@ xdb *xdb_archive_open(const char path[PATH_MAX]) {
 }
 
 void xdb_archive_close(xdb *archive) {
+	if (!archive) return;
+
 	if (archive->_f)
 		fclose(archive->_f);
 
@@ -310,4 +312,54 @@ int xdb_extract_all(xdb *archive, const char path[]) {
 	free(args.data);
 	free_xdb_metadata(metadata);
 	return args.r;
+}
+
+unsigned char *xdb_archive_get_member_data(const xdb *archive, const char member[], size_t *buffsize) {
+	size_t bsize, poffset;
+	unsigned char *data;
+	unsigned char *buff;
+	const xdb_chunk *cdata;
+	const xdb_metadata_entry *entry = NULL;
+	struct dynarray *metadata;
+
+	metadata = xdb_read_metadata(archive);
+	if (!metadata)
+		return NULL;
+
+	DYNARRAY_INLINE_FOREACH(metadata, const xdb_metadata_entry) {
+		if (strcmp(member, (*it)->path) == 0) {
+			entry = *it;
+			break;
+		}
+	}
+	if (!entry) {
+		free_xdb_metadata(metadata);
+		return NULL;
+	}
+
+	cdata = xdb_get_chunk(archive, XDB_DATA_CHUNK);
+	if (!cdata) {
+		free_xdb_metadata(metadata);
+		return NULL;
+	}
+
+	data = xdb_get_chunk_data(archive, cdata, &bsize);
+
+	bsize = entry->real_size;
+	buff = malloc(bsize);
+
+	poffset = entry->ptr - cdata->fpos;
+
+	if (entry->real_size != entry->comp_size) {
+		lzo1x_decompress((lzo_bytep)data + poffset, entry->comp_size, (lzo_bytep)buff, &bsize, NULL);
+	} else {
+		memcpy(buff, data + poffset, bsize);
+	}
+
+	if (buffsize)
+		*buffsize = bsize;
+
+	free(data);
+
+	return buff;
 }

@@ -65,6 +65,8 @@ void xdb_archive_close(xdb*);
 const xdb_chunk *xdb_get_chunk(const xdb*, unsigned long);
 unsigned char *xdb_get_chunk_data(const xdb*, const xdb_chunk*, size_t*);
 
+unsigned char *xdb_archive_get_member_data(const xdb*, const char[], size_t*);
+
 DLTX *xdb_get_header(const xdb*);
 
 struct dynarray* xdb_read_metadata(const xdb*);
