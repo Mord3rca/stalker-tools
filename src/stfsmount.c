@@ -89,9 +89,9 @@ typedef struct {
 	stcore_filesystem_path fs_path;
 
 	union {
-		char *link;
 		stfs_xdb_member *mdb;
 		struct dynarray *dir_list;
+		stcore_filesystem_path *link;
 	} arg;
 } stfs_item;
 
@@ -103,7 +103,6 @@ static struct dynarray *dbs;
 static stcore_filesystem_path root_path;
 
 static stfs_item *stfs_item_create_link(const char name[]) {
-	stcore_filesystem_path p;
 	stfs_item *item = malloc(sizeof(stfs_item));
 
 	item->type = STFS_ITEM_LINK;
@@ -111,13 +110,12 @@ static stfs_item *stfs_item_create_link(const char name[]) {
 	stcore_filesystem_path_init(&(item->fs_path), name);
 	stcore_filesystem_path_prepend(root_path, &(item->fs_path));
 
-	stcore_filesystem_path_init(&p, dltx_section_get_key(stfs_cfg, "wdir")->value);
-	stcore_filesystem_path_append(item->fs_path, &p);
+	item->arg.link = stcore_filesystem_path_create(dltx_section_get_key(stfs_cfg, "wdir")->value);
+	stcore_filesystem_path_append(item->fs_path, item->arg.link);
 
 	for(char *i = item->fs_path.target; *i; i++)
 		*i = tolower(*i);
 
-	item->arg.link = strdup(p.target);
 	return item;
 }
 
@@ -409,6 +407,7 @@ static int stfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_i
 	case STFS_ITEM_LINK:
 		stbuf->st_mode = S_IFLNK | 0777;
 		stbuf->st_nlink = 1;
+		stbuf->st_size = it->arg.link->len;
 		break;
 	case STFS_ITEM_XDB_MEMBER:
 		stbuf->st_mode = S_IFREG | 0544;
@@ -454,7 +453,7 @@ static int stfs_readlink(const char *fpath, char *target, size_t len) {
 	if (i->type != STFS_ITEM_LINK)
 		return -EINVAL;
 
-	strncpy(target, i->arg.link, len);
+	strncpy(target, i->arg.link->target, len);
 
 	return 0;
 }
