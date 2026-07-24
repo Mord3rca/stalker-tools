@@ -19,6 +19,22 @@ ini.read('/path/to/file')
 
 Mount internal Stalker Filesystem with FUSE to a directory
 
+Usage:
+
+```sh
+$ stfsmount -s --st_path=/path/to/stalker/dir <mountpoint>
+```
+
+Tested by running `dltx-resolver` on **<mountpoint>/gamedata/configs/system.ltx**
+
+### Limitation
+
+* Read only
+
+* Only use `-s` since thread protection is not garanted for now
+
+* Not so fast and do a lot of mem copy (bad)
+
 ## xdb
 
 A tar-like executable to manipulate XDB archive (defined by a stalker gamefile containing a header, data & metadata chunks)
