@@ -12,11 +12,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install shellcheck
-        run: sudo apt install shellcheck
+      - name: Setup
+        run: |
+          sudo apt install shellcheck
+          docker build -t lua-linter .github/lua-defs-linter
       - name: Shellcheck
         run: shellcheck utils/scripts/*
       - name: Checkpatch
         run: |
           mapfile -t sources < <(find . -name '*.[ch]')
           .github/scripts/checkpatch.pl --file "${sources[@]}"
+      - name: LUA Language Server
+        run: docker run -v "${PWD}:/work" -w /work lua-linter
