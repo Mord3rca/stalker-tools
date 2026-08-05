@@ -497,14 +497,14 @@ static int stfs_open(const char *fpath, struct fuse_file_info *fi)
 		i->arg.mdb->db->handler = xdb_archive_open(i->arg.mdb->db->path.target);
 
 	if (!i->arg.mdb->buf)
-		i->arg.mdb->buf = xdb_archive_get_member_data(i->arg.mdb->db->handler, i->arg.mdb->mname, NULL);
+		i->arg.mdb->buf = (char *)xdb_archive_get_member_data(i->arg.mdb->db->handler, i->arg.mdb->mname, NULL);
 
 	return 0;
 }
 
 static int stfs_release(const char *fpath, struct fuse_file_info *fi)
 {
-	stfs_item *it;
+	const stfs_item *it;
 
 	it = stfs_find_item_by_path(fpath);
 	if (!it)
