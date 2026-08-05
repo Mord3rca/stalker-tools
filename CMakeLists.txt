@@ -8,6 +8,7 @@ project(
     DESCRIPTION "A collection of tools to manipulate/parse STALKER assets"
 )
 
+set(ENABLE_TESTS OFF CACHE BOOL "Enable testing via Ctest & Cunit")
 set(ENABLE_DLTX_TRACE OFF CACHE BOOL "Enable Trace capability for DLTX parsing")
 
 include(GNUInstallDirs)
@@ -20,3 +21,6 @@ endif()
 
 add_subdirectory("lib/")
 add_subdirectory("src/")
+if (${ENABLE_TESTS})
+    add_subdirectory("tests/")
+endif()
