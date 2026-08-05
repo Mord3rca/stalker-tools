@@ -6,7 +6,8 @@
 
 
 #ifdef DLTX_TRACE
-bool write_key_trace(DLTXKey *k, FILE *out) {
+bool write_key_trace(DLTXKey *k, FILE *out)
+{
 	fprintf(
 		out, "%8s%-32s = %-32s  ; Defined @%s:%lu\r\n",
 		" ", k->name, k->value ? k->value : "", k->file, k->line
@@ -16,7 +17,8 @@ bool write_key_trace(DLTXKey *k, FILE *out) {
 }
 
 static char sec[512];
-bool write_section_trace(DLTXSection *s, FILE *out) {
+bool write_section_trace(DLTXSection *s, FILE *out)
+{
 	snprintf(sec, 512, "[%s]", s->name);
 	fprintf(out, "%-77s; Defined @%s:%lu\r\n", sec, s->file, s->line);
 	dynarray_foreach(s->keys, (dynarray_cb)&write_key_trace, out);
@@ -26,7 +28,8 @@ bool write_section_trace(DLTXSection *s, FILE *out) {
 }
 #endif
 
-bool write_key(DLTXKey *k, FILE *out) {
+bool write_key(DLTXKey *k, FILE *out)
+{
 	if (k->value && *(k->value) != 0)
 		fprintf(out, "%8s%-32s = %s\r\n", " ", k->name, k->value);
 	else
@@ -35,7 +38,8 @@ bool write_key(DLTXKey *k, FILE *out) {
 	return true;
 }
 
-bool write_section(DLTXSection *s, FILE *out) {
+bool write_section(DLTXSection *s, FILE *out)
+{
 	fprintf(out, "[%s]\r\n", s->name);
 	dynarray_foreach(s->keys, (dynarray_cb)&write_key, out);
 	fprintf(out, " \r\n");
@@ -43,7 +47,7 @@ bool write_section(DLTXSection *s, FILE *out) {
 	return true;
 }
 
-static struct option loptions[] = {
+static const struct option loptions[] = {
 	{"help",	no_argument,	0, 'h'},
 #ifdef DLTX_TRACE
 	{"trace",	no_argument,	0, 't'},
@@ -52,12 +56,13 @@ static struct option loptions[] = {
 };
 
 #ifdef DLTX_TRACE
-static char optstring[] = "ht";
+static const char optstring[] = "ht";
 #else
-static char optstring[] = "h";
+static const char optstring[] = "h";
 #endif
 
-static void print_help(const char *cmd, FILE *out) {
+static void print_help(const char *cmd, FILE *out)
+{
 	fprintf(out,
 "usage: %s [options] <FILE>\n"
 "\nOptions:\n"
@@ -69,19 +74,20 @@ static void print_help(const char *cmd, FILE *out) {
 	, cmd);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	int c;
 	DLTX *ini;
 	DLTX_RETURN_CODE err;
 	bool (*write_cb)(DLTXSection*, FILE*) = &write_section;
 
-	while(1) {
+	while (1) {
 		c = getopt_long(argc, argv, optstring, loptions, NULL);
 
 		if (c == -1)
 			break;
 
-		switch(c) {
+		switch (c) {
 		case 'h':
 			print_help(argv[0], stdout);
 			return 0;
@@ -108,7 +114,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	ini = dltx_create_from_file(argv[optind], &err);
-	if(err != NO_ERROR) {
+	if (err != NO_ERROR) {
 		puts(dltx_return_code_to_str(err));
 		return -err;
 	}

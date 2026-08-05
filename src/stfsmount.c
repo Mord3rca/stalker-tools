@@ -39,21 +39,22 @@ static const struct fuse_opt option_spec[] = {
 	FUSE_OPT_END
 };
 
-static void show_help(const char prgname[]) {
+static void show_help(const char prgname[])
+{
 	printf(
 	    "Usage: %s [options] <mountpoint>\n"
 	    "STFS specific options:\n"
-	    "    --stfs_path=<s>      	Path to the STALKER $fs_root$\n"
-	    "    --stfs_cache_path=<s>	Path relative to stpath of the\n"
-	    "                         	STFS INI cache file (to write and/or to use)\n"
-	    "                         	(Default: .stfs_cache.ini)\n"
-	    "    --stfs_use_cache     	Enable cache function\n"
+	    "    --stfs_path=<s>        Path to the STALKER $fs_root$\n"
+	    "    --stfs_cache_path=<s>  Path relative to stpath of the\n"
+	    "                           STFS INI cache file (to write and/or to use)\n"
+	    "                           (Default: .stfs_cache.ini)\n"
+	    "    --stfs_use_cache       Enable cache function\n"
 	    "\n"
 	, prgname ? prgname : "stenv");
 }
 
 // Only used during config creation/parsing
-static DLTXSection *stfs_cfg;
+static DLTXSection * stfs_cfg;
 static DLTXSection *stfs_map;
 static DLTXSection *stfs_db_preload;
 
@@ -102,7 +103,8 @@ static struct dynarray *dbs;
 
 static stcore_filesystem_path root_path;
 
-static stfs_item *stfs_item_create_link(const char name[]) {
+static stfs_item *stfs_item_create_link(const char name[])
+{
 	stfs_item *item = malloc(sizeof(stfs_item));
 
 	item->type = STFS_ITEM_LINK;
@@ -113,13 +115,14 @@ static stfs_item *stfs_item_create_link(const char name[]) {
 	item->arg.link = stcore_filesystem_path_create(dltx_section_get_key(stfs_cfg, "wdir")->value);
 	stcore_filesystem_path_append(item->fs_path, item->arg.link);
 
-	for(char *i = item->fs_path.target; *i; i++)
+	for (char *i = item->fs_path.target; *i; i++)
 		*i = tolower(*i);
 
 	return item;
 }
 
-static stfs_xdb *stfs_xdb_get_handler(const char db[]) {
+static stfs_xdb *stfs_xdb_get_handler(const char db[])
+{
 	stfs_xdb *r = malloc(sizeof(stfs_xdb));
 
 	stcore_filesystem_path_init(&(r->path), db);
@@ -136,12 +139,14 @@ static stfs_xdb *stfs_xdb_get_handler(const char db[]) {
 	return r;
 }
 
-static void stfs_xdb_free(stfs_xdb *i) {
+static void stfs_xdb_free(stfs_xdb *i)
+{
 	xdb_archive_close(i->handler);
 	free(i);
 }
 
-static stfs_xdb_member *stfs_xdb_member_create(const char db[], const char member[], const char msize[]) {
+static stfs_xdb_member *stfs_xdb_member_create(const char db[], const char member[], const char msize[])
+{
 	size_t size;
 	stfs_xdb_member *r = malloc(sizeof(stfs_xdb_member));
 
@@ -162,11 +167,13 @@ static stfs_xdb_member *stfs_xdb_member_create(const char db[], const char membe
 	return r;
 }
 
-static stfs_item *stfs_item_create_xdb_handler(const char name[], const char xdb_uri[]) {
+static stfs_item *stfs_item_create_xdb_handler(const char name[], const char xdb_uri[])
+{
 	char *uri;
 	char *elements[3];  // db / member / size
 	size_t i, j;
 	stfs_item *item = malloc(sizeof(stfs_item));
+
 	item->type = STFS_ITEM_XDB_MEMBER;
 
 	stcore_filesystem_path_init(&(item->fs_path), name);
@@ -198,29 +205,30 @@ static stfs_item *stfs_item_create_xdb_handler(const char name[], const char xdb
 	return item;
 }
 
-static stfs_item *stfs_item_create(const char path[], const char value[]) {
+static stfs_item *stfs_item_create(const char path[], const char value[])
+{
 	stfs_item *item = NULL;
 
-	if (!(value && (*value))) {
+	if (!(value && (*value)))
 		item = stfs_item_create_link(path);
-	} else if( value && strncmp(value, "xdb://", 6) == 0) {
+	else if (value && strncmp(value, "xdb://", 6) == 0)
 		item = stfs_item_create_xdb_handler(path, value + strlen("xdb://"));
-	} else {
+	else
 		return NULL;
-	}
 
 	dynarray_insert(fs_items, item);
 	return item;
 }
 
-static stfs_item *stfs_item_create_dir(const stcore_filesystem_path p) {
+static stfs_item *stfs_item_create_dir(const stcore_filesystem_path p)
+{
 	stfs_item *i = malloc(sizeof(stfs_item));
 
 	i->type = STFS_ITEM_DIR;
 	stcore_filesystem_path_copy(p, &(i->fs_path));
 	i->arg.dir_list = dynarray_create(24);
 
-	for(char *j = i->fs_path.target; *j; j++)
+	for (char *j = i->fs_path.target; *j; j++)
 		*j = tolower(*j);
 
 	dynarray_insert(fs_dirs, i);
@@ -229,8 +237,10 @@ static stfs_item *stfs_item_create_dir(const stcore_filesystem_path p) {
 	return i;
 }
 
-static void stfs_item_free(stfs_item *i) {
-	if (!i) return;
+static void stfs_item_free(stfs_item *i)
+{
+	if (!i)
+		return;
 
 	switch (i->type) {
 	case STFS_ITEM_DIR:
@@ -244,18 +254,20 @@ static void stfs_item_free(stfs_item *i) {
 		free(i->arg.mdb);
 		break;
 	default:
-		fprintf(stderr, "stfs_item_free() error: Invalid type\n");
+		fprintf(stderr, "%s() error: Invalid type\n", __func__);
 	}
 
 	free(i);
 }
 
-static int stfs_item_sort(const stfs_item **a, const stfs_item **b) {
+static int stfs_item_sort(const stfs_item **a, const stfs_item **b)
+{
 	return stcore_filesystem_path_cmp((*a)->fs_path, (*b)->fs_path);
 }
 
-static inline bool _non_ascii_path(const char path[]) {
-	for(const char *c = path; *c; c++) {
+static inline bool _non_ascii_path(const char path[])
+{
+	for (const char *c = path; *c; c++) {
 		if (!isascii(*c))
 			return true;
 	}
@@ -263,7 +275,8 @@ static inline bool _non_ascii_path(const char path[]) {
 	return false;
 }
 
-static void _register_db_elements(xdb *f, DLTX *header) {
+static void _register_db_elements(xdb *f, DLTX *header)
+{
 	struct dynarray *metadata;
 	char *tmp, *fpath, *cpath, *rpath, buffer[PATH_MAX * 2];
 
@@ -304,7 +317,8 @@ static void _register_db_elements(xdb *f, DLTX *header) {
 	free_xdb_metadata(metadata);
 }
 
-static int parse_db_overrides(void) {
+static int parse_db_overrides(void)
+{
 	struct dynarray *dbs;
 	xdb *file;
 	const char *v;
@@ -345,7 +359,8 @@ static int parse_db_overrides(void) {
 	return 0;
 }
 
-static int parse_cur_fs(void) {
+static int parse_cur_fs(void)
+{
 	char *t;
 	struct dynarray *files = filesystem_list_files(".", -1);
 
@@ -362,36 +377,41 @@ static int parse_cur_fs(void) {
 	return 0;
 }
 
-static void write_to_file(DLTX *root, const char path[]) {
+static void write_to_file(DLTX *root, const char path[])
+{
 	FILE *f;
 
 	f = fopen(path, "w");
-	if (!f) return;
+	if (!f)
+		return;
 
 	dltx_save_to_file(root, f);
 
 	fclose(f);
 }
 
-static int _bsearch_find_by_path(const stcore_filesystem_path *p, const stfs_item **i) {
+static int _bsearch_find_by_path(const stcore_filesystem_path *p, const stfs_item **i)
+{
 	return stcore_filesystem_path_cmp(*p, (*i)->fs_path);
 }
 
-static const stfs_item *stfs_find_item_by_path(const char fpath[]) {
+static const stfs_item *stfs_find_item_by_path(const char fpath[])
+{
 	stfs_item **i;
 	stcore_filesystem_path p;
 
 	stcore_filesystem_path_init(&p, fpath);
 
 	i = bsearch(
-	  &p, fs_items->arr, fs_items->size, sizeof(stfs_item*),
+	  &p, fs_items->arr, fs_items->size, sizeof(stfs_item *),
 	  (int (*)(const void*, const void*))_bsearch_find_by_path
 	);
 
-	return (i ? *i : NULL);
+	return i ? *i : NULL;
 }
 
-static int stfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
+static int stfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi)
+{
 	int res = 0;
 	const stfs_item *it;
 
@@ -399,7 +419,7 @@ static int stfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_i
 	if (!it)
 		return -ENOENT;
 
-	switch(it->type) {
+	switch (it->type) {
 	case STFS_ITEM_DIR:
 		stbuf->st_mode = S_IFDIR | 0555;
 		stbuf->st_nlink = 2;
@@ -443,7 +463,8 @@ static int stfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	return 0;
 }
 
-static int stfs_readlink(const char *fpath, char *target, size_t len) {
+static int stfs_readlink(const char *fpath, char *target, size_t len)
+{
 	const stfs_item *i;
 
 	i = stfs_find_item_by_path(fpath);
@@ -458,7 +479,8 @@ static int stfs_readlink(const char *fpath, char *target, size_t len) {
 	return 0;
 }
 
-static int stfs_open(const char *fpath, struct fuse_file_info *fi) {
+static int stfs_open(const char *fpath, struct fuse_file_info *fi)
+{
 	const stfs_item *i;
 
 	if ((fi->flags & O_ACCMODE) != O_RDONLY)
@@ -471,22 +493,22 @@ static int stfs_open(const char *fpath, struct fuse_file_info *fi) {
 	if (i->type != STFS_ITEM_XDB_MEMBER)
 		return -EINVAL;
 
-	if (!i->arg.mdb->db->handler) {
+	if (!i->arg.mdb->db->handler)
 		i->arg.mdb->db->handler = xdb_archive_open(i->arg.mdb->db->path.target);
-	}
 
-	if (!i->arg.mdb->buf) {
+	if (!i->arg.mdb->buf)
 		i->arg.mdb->buf = xdb_archive_get_member_data(i->arg.mdb->db->handler, i->arg.mdb->mname, NULL);
-	}
 
 	return 0;
 }
 
-static int stfs_release(const char *fpath, struct fuse_file_info *fi) {
+static int stfs_release(const char *fpath, struct fuse_file_info *fi)
+{
 	stfs_item *it;
 
 	it = stfs_find_item_by_path(fpath);
-	if (!it) return 0;
+	if (!it)
+		return 0;
 
 	free(it->arg.mdb->buf);
 	it->arg.mdb->buf = NULL;
@@ -495,7 +517,7 @@ static int stfs_release(const char *fpath, struct fuse_file_info *fi) {
 }
 
 static int stfs_read(const char *fpath, char *buf, size_t size, off_t offset,
-                      struct fuse_file_info *fi)
+		     struct fuse_file_info *fi)
 {
 	size_t len;
 	const stfs_item *i;
@@ -518,7 +540,8 @@ static int stfs_read(const char *fpath, char *buf, size_t size, off_t offset,
 	return size;
 }
 
-static void *stfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
+static void *stfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg)
+{
 	cfg->kernel_cache = 1;
 
 	chdir(options.stpath);
@@ -527,7 +550,8 @@ static void *stfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 	return NULL;
 }
 
-static void stfs_destroy(void *_ /*unused*/) {
+static void stfs_destroy(void *_ /*unused*/)
+{
 	free_dynarray(fs_dirs, NULL);
 	free_dynarray(fs_items, (dynarray_free_cb)stfs_item_free);
 	free_dynarray(dbs, (dynarray_free_cb)stfs_xdb_free);
@@ -545,7 +569,8 @@ static const struct fuse_operations stfs_oper = {
 	.destroy = stfs_destroy,
 };
 
-static DLTX *stfs_load_from_cache(const char cache[]) {
+static DLTX *stfs_load_from_cache(const char cache[])
+{
 	DLTX *r = NULL;
 	DLTX_RETURN_CODE ret;
 
@@ -562,7 +587,8 @@ static DLTX *stfs_load_from_cache(const char cache[]) {
 	return r;
 }
 
-static DLTX *stfs_create_config(const char cache[]) {
+static DLTX *stfs_create_config(const char cache[])
+{
 	DLTX *r = NULL;
 
 	r = dltx_create();
@@ -582,7 +608,8 @@ static DLTX *stfs_create_config(const char cache[]) {
 	return r;
 }
 
-static stfs_item *stfs_create_dir_if_dont_exist(const stcore_filesystem_path p) {
+static stfs_item *stfs_create_dir_if_dont_exist(const stcore_filesystem_path p)
+{
 	stfs_item *i, *j;
 	stcore_filesystem_path dir, pabs;
 
@@ -608,7 +635,8 @@ static stfs_item *stfs_create_dir_if_dont_exist(const stcore_filesystem_path p) 
 	return i;
 }
 
-static void stfs_create_fs_structure(DLTX *config) {
+static void stfs_create_fs_structure(DLTX *config)
+{
 	stfs_item *item, *dir;
 	const DLTXSection *mapping;
 	stcore_filesystem_path fsroot, dirname;
@@ -636,13 +664,14 @@ static void stfs_create_fs_structure(DLTX *config) {
 		dynarray_insert(dir->arg.dir_list, item);
 	}
 
-	qsort(fs_dirs->arr, fs_dirs->size, sizeof(stfs_item*), (int (*)(const void*, const void*))&stfs_item_sort);
-	qsort(fs_items->arr, fs_items->size, sizeof(stfs_item*), (int (*)(const void*, const void*))&stfs_item_sort);
+	qsort(fs_dirs->arr, fs_dirs->size, sizeof(stfs_item *), (int (*)(const void*, const void*))&stfs_item_sort);
+	qsort(fs_items->arr, fs_items->size, sizeof(stfs_item *), (int (*)(const void*, const void*))&stfs_item_sort);
 
 	free_dltx(config);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	struct stat s = {0};
 	DLTX *stfs_root = NULL;
 	struct fuse_args args __attribute__((cleanup(fuse_opt_free_args))) = FUSE_ARGS_INIT(argc, argv);
