@@ -101,6 +101,7 @@ int stcore_filesystem_path_append(const stcore_filesystem_path src, stcore_files
 }
 
 int stcore_filesystem_path_prepend(const stcore_filesystem_path src, stcore_filesystem_path *dst) {
+	size_t off = 0;
 	char buf[PATH_MAX] = {0};
 
 	if (!dst)
@@ -110,7 +111,11 @@ int stcore_filesystem_path_prepend(const stcore_filesystem_path src, stcore_file
 		return -1;
 
 	strncpy(buf, src.target, src.len);
-	strncpy(buf + src.len, dst->target, dst->len);
+	if (src.target[src.len] != '/' && dst->target[0] != '/') {
+		buf[src.len] = '/';
+		off++;
+	}
+	strncpy(buf + src.len + off, dst->target, dst->len);
 
 	stcore_filesystem_path_init(dst, buf);
 
