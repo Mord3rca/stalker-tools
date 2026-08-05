@@ -22,7 +22,8 @@ static const struct option lopts[] = {
 	{0,		0,			0,  0 }
 };
 
-static void print_usage(FILE *out, const char *prg) {
+static void print_usage(FILE *out, const char *prg)
+{
 	fprintf(out,
 "Usage: %s [OPTIONS] ARCHIVE\n\n"
 "Options:\n"
@@ -36,15 +37,17 @@ static void print_usage(FILE *out, const char *prg) {
 prg ? prg : "xdb");
 }
 
-static bool verbose = false;
-static const char *archive_path = NULL;
+static bool verbose;
+static const char *archive_path;
 
-static bool print_entry(xdb_metadata_entry *entry, void *_unused) {
+static bool print_entry(xdb_metadata_entry *entry, void *_unused)
+{
 	fprintf(stdout, "%s\n", entry->path);
 	return true;
 }
 
-static bool print_verbose_entry(xdb_metadata_entry *entry, void *_unused) {
+static bool print_verbose_entry(xdb_metadata_entry *entry, void *_unused)
+{
 	fprintf(
 		stdout, "%srw-rw-r-- %6d %s\n",
 		entry->ptr == 0 && entry->real_size == 0 ? "d" : "-",
@@ -53,27 +56,29 @@ static bool print_verbose_entry(xdb_metadata_entry *entry, void *_unused) {
 	return true;
 }
 
-static int action_list(xdb *archive) {
+static int action_list(xdb *archive)
+{
 	struct dynarray *entries = NULL;
 
 	entries = xdb_read_metadata(archive);
-	if (!entries) {
+	if (!entries)
 		return 1;
-	}
 
-	dynarray_foreach(entries, (bool (*)(void*,void*))(verbose ? &print_verbose_entry : print_entry), NULL);
+	dynarray_foreach(entries, (bool (*)(void*, void*))(verbose ? &print_verbose_entry : print_entry), NULL);
 
 	free_xdb_metadata(entries);
 
 	return 0;
 }
 
-static bool _action_sh_key_iterator(DLTXKey *k, void* _ptr) {
+static bool _action_sh_key_iterator(DLTXKey *k, void *_ptr)
+{
 	fprintf(stdout, "%8s%s = %s\n", " ", k->name, k->value);
 	return true;
 }
 
-static int action_show_header(xdb *archive) {
+static int action_show_header(xdb *archive)
+{
 	DLTX *header;
 	DLTXSection *s;
 
@@ -83,9 +88,8 @@ static int action_show_header(xdb *archive) {
 		return 1;
 	}
 
-	if (header->sections->size != 1) {
+	if (header->sections->size != 1)
 		fprintf(stderr, "WARN: Header have more than one section\n");
-	}
 
 	s = dltx_find_section(header, "header");
 	if (!s) {
@@ -100,21 +104,26 @@ static int action_show_header(xdb *archive) {
 	return 0;
 }
 
-static int action_extract(xdb *archive) {
+static int action_extract(xdb *archive)
+{
 	return xdb_extract_all(archive, "./");
 }
 
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	int c;
 	xdb *archive;
-	int (*act_cb)(xdb*) = NULL;
+	int (*act_cb)(xdb *) = NULL;
 
-	while(1) {
+	verbose = false;
+	archive_path = NULL;
+
+	while (1) {
 		c = getopt_long(argc, argv, opts, lopts, NULL);
 		if (c == -1)
 			break;
 
-		switch(c) {
+		switch (c) {
 		case 'C':
 			if (chdir(optarg) < 0) {
 				fprintf(stderr, "ERR: Can't chdir() to %s\n", optarg);
