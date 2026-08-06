@@ -12,39 +12,32 @@ DLTX_RETURN_CODE dltx_init_code = NO_ERROR;
 const size_t dltx_default_key_array_size = 128;
 const size_t dltx_default_section_array_size = 32;
 
-const char *dltx_return_code_to_str(DLTX_RETURN_CODE err) {
-	switch(err) {
+const char *dltx_return_code_to_str(DLTX_RETURN_CODE err)
+{
+	switch (err) {
 	case NO_ERROR:
 		return "No error";
-		break;
 
 	case INIT_ERROR:
 		return "Failure to init";
-		break;
-
 	case FILE_READ_ERROR:
 		return "File read error, see errno for more info";
-		break;
 
 	case FILE_TOO_BIG:
 		return "File too big for buffer size";
-		break;
 
 	case PARSER_FORMAT_ERROR:
 		return "Error in file format";
-		break;
 
 	case PARSER_LOGIC_ERROR:
 		return "logic error";
-		break;
 
 	case EVAL_GENERIC_ERROR:
 		return "Geniric error during EVAL stage";
-		break;
 
 	case EVAL_MISSING_SECTION:
 		return "A section definition is missing";
-		break;
+
 	default:
 		// Supposed to be dead code .... But we never know !
 		return "Dont know";
@@ -52,26 +45,28 @@ const char *dltx_return_code_to_str(DLTX_RETURN_CODE err) {
 }
 
 __attribute__((constructor))
-static void dltx_init(void) {
+static void dltx_init(void)
+{
 	dltx_init_code = dltx_parser_init();
 }
 
 __attribute__((destructor))
-static void dltx_cleanup(void) {
+static void dltx_cleanup(void)
+{
 	dltx_parser_cleanup();
 }
 
 // DLTXKey methods
 
-DLTXKey *dltx_create_key(const char name[], const char value[]) {
+DLTXKey *dltx_create_key(const char name[], const char value[])
+{
 	DLTXKey *k = malloc(sizeof(DLTXKey));
 
 	k->name = strdup(name);
 	k->value = NULL;
 
-	if (value != NULL) {
+	if (value != NULL)
 		k->value = strdup(value);
-	}
 
 #ifdef DLTX_TRACE
 	k->file = NULL;
@@ -81,20 +76,22 @@ DLTXKey *dltx_create_key(const char name[], const char value[]) {
 	return k;
 }
 
-void free_dltx_key(DLTXKey *k) {
+void free_dltx_key(DLTXKey *k)
+{
 	free(k->name);
 	if (k->value != NULL)
 		free(k->value);
 	free(k);
 }
 
-DLTXKey *dltx_key_copy(const DLTXKey *k) {
+DLTXKey *dltx_key_copy(const DLTXKey *k)
+{
 	DLTXKey *r = malloc(sizeof(DLTXKey));
 
 	r->name = strdup(k->name);
 	r->value = NULL;
 
-	if(k->value)
+	if (k->value)
 		r->value = strdup(k->value);
 
 #ifdef DLTX_TRACE
@@ -104,7 +101,8 @@ DLTXKey *dltx_key_copy(const DLTXKey *k) {
 	return r;
 }
 
-void dltx_key_set_value(DLTXKey *k, const char value[]) {
+void dltx_key_set_value(DLTXKey *k, const char value[])
+{
 	if (value == NULL)
 		return;
 
@@ -114,7 +112,8 @@ void dltx_key_set_value(DLTXKey *k, const char value[]) {
 	k->value = strdup(value);
 }
 
-void dltx_key_update(DLTXKey *dest, const DLTXKey *src) {
+void dltx_key_update(DLTXKey *dest, const DLTXKey *src)
+{
 	if (!src)
 		return;
 
@@ -133,11 +132,12 @@ void dltx_key_update(DLTXKey *dest, const DLTXKey *src) {
 
 // DLTXSection methods
 
-DLTXSection *dltx_create_section(const char name[]) {
+DLTXSection *dltx_create_section(const char name[])
+{
 	DLTXSection *s = malloc(sizeof(DLTXSection));
 
 	s->name = strdup(name);
-	for(char *i = s->name; *i != 0; i++)
+	for (char *i = s->name; *i != 0; i++)
 		*i = tolower(*i);
 
 	s->keys = dynarray_create(dltx_default_key_array_size);
@@ -153,7 +153,8 @@ DLTXSection *dltx_create_section(const char name[]) {
 	return s;
 }
 
-void free_dltx_section(DLTXSection *s) {
+void free_dltx_section(DLTXSection *s)
+{
 	free(s->name);
 	if (s->inheritance != NULL) {
 		for (char **i = s->inheritance; i && *i; i++)
@@ -161,38 +162,38 @@ void free_dltx_section(DLTXSection *s) {
 		free(s->inheritance);
 	}
 
-	free_dynarray(s->keys, (void (*)(void*))&free_dltx_key);
+	free_dynarray(s->keys, (dynarray_free_cb)&free_dltx_key);
 	free(s);
 }
 
-DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[]) {
-	DLTXKey **cur = (DLTXKey**)sec->keys->arr;
-	DLTXKey **end = (DLTXKey**)sec->keys->arr + sec->keys->size;
+DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[])
+{
+	DLTXKey **cur = (DLTXKey **)sec->keys->arr;
+	DLTXKey **end = (DLTXKey **)sec->keys->arr + sec->keys->size;
 
-	for(;cur < end; cur++) {
-		if(strcmp((*cur)->name, name) == 0)
+	for (; cur < end; cur++)
+		if (strcmp((*cur)->name, name) == 0)
 			return *cur;
-	}
 
 	return NULL;
 }
 
-DLTX_RETURN_CODE dltx_section_set_key(DLTXSection *sec, const char key[], const char value[]) {
+DLTX_RETURN_CODE dltx_section_set_key(DLTXSection *sec, const char key[], const char value[])
+{
 	DLTXKey *k;
 
 	k = dltx_section_get_key(sec, key);
 	if (k == NULL) {
 		k = dltx_create_key(key, value);
 		dynarray_insert(sec->keys, k);
-	} else {
+	} else
 		dltx_key_set_value(k, value);
-	}
-
 
 	return NO_ERROR;
 }
 
-DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[]) {
+DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[])
+{
 	DLTXKey *k;
 
 	k = dltx_section_get_key(sec, key);
@@ -204,17 +205,19 @@ DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[]) {
 	return NO_ERROR;
 }
 
-DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection *sec) {
+DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection *sec)
+{
 	if (sec->keys->size == 0)
 		return NO_ERROR;
 
-	free_dynarray(sec->keys, (void (*)(void*))&free_dltx_key);
+	free_dynarray(sec->keys, (void (*)(void *))&free_dltx_key);
 	sec->keys = dynarray_create(1);
 
 	return NO_ERROR;
 }
 
-DLTX_RETURN_CODE dltx_section_update_key(DLTXSection *section, const DLTXKey *src) {
+DLTX_RETURN_CODE dltx_section_update_key(DLTXSection *section, const DLTXKey *src)
+{
 	DLTXKey *dest = dltx_section_get_key(section, src->name);
 
 	if (!dest) {
@@ -227,7 +230,8 @@ DLTX_RETURN_CODE dltx_section_update_key(DLTXSection *section, const DLTXKey *sr
 	return NO_ERROR;
 }
 
-DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *src) {
+DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *src)
+{
 	DLTXKey *cur, *fnd;
 	DLTXKey **arr_cur;
 	DLTXKey **arr_end;
@@ -235,9 +239,9 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 	if (src == NULL)
 		return NO_ERROR; // TODO: Null args.
 
-	arr_end = (DLTXKey**)src->keys->arr + src->keys->size;
+	arr_end = (DLTXKey **)src->keys->arr + src->keys->size;
 
-	for(arr_cur = (DLTXKey**)src->keys->arr; arr_cur < arr_end; arr_cur++) {
+	for (arr_cur = (DLTXKey **)src->keys->arr; arr_cur < arr_end; arr_cur++) {
 		cur = *arr_cur;
 		if (cur == NULL)
 			break;
@@ -249,9 +253,9 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 				fnd->value = NULL;
 			}
 
-			if (cur -> value != NULL) {
+			if (cur->value != NULL)
 				fnd->value = strdup(cur->value);
-			}
+
 #ifdef DLTX_TRACE
 			fnd->file = cur->file;
 			fnd->line = cur->line;
@@ -262,6 +266,7 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 		dltx_section_set_key(dest, cur->name, cur->value);
 #ifdef DLTX_TRACE
 		DLTXKey *k = dltx_section_get_key(dest, cur->name);
+
 		k->file = cur->file;
 		k->line = cur->line;
 #endif
@@ -269,17 +274,20 @@ DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *dest, const DLTXSection *
 	return NO_ERROR;
 }
 
-static int _dltx_key_name_cmp(const DLTXKey **a, const DLTXKey **b) {
+static int _dltx_key_name_cmp(const DLTXKey **a, const DLTXKey **b)
+{
 	return strcmp((*a)->name, (*b)->name);
 }
 
-void dltx_section_sort(DLTXSection *s) {
-	qsort(s->keys->arr, s->keys->size, sizeof(DLTXKey*), (int (*)(const void*, const void*))&_dltx_key_name_cmp);
+void dltx_section_sort(DLTXSection *s)
+{
+	qsort(s->keys->arr, s->keys->size, sizeof(DLTXKey *), (int (*)(const void *, const void *))&_dltx_key_name_cmp);
 }
 
 // DLTX Methods
 
-DLTX *dltx_create(void) {
+DLTX *dltx_create(void)
+{
 	DLTX *dltx = malloc(sizeof(DLTX));
 
 	dltx->sections = dynarray_create(dltx_default_section_array_size);
@@ -293,15 +301,17 @@ DLTX *dltx_create(void) {
 	return dltx;
 }
 
-void free_dltx(DLTX *l) {
-	free_dynarray(l->sections, (void (*)(void*))&free_dltx_section);
+void free_dltx(DLTX *l)
+{
+	free_dynarray(l->sections, (dynarray_free_cb)&free_dltx_section);
 #ifdef DLTX_TRACE
 	free_dynarray(l->files, &free);
 #endif
 	free(l);
 }
 
-DLTX *dltx_create_from_file(const char filename[], DLTX_RETURN_CODE *err) {
+DLTX *dltx_create_from_file(const char filename[], DLTX_RETURN_CODE *err)
+{
 	DLTX *r = dltx_create();
 
 	*err = dltx_read_file(r, filename);
@@ -314,32 +324,37 @@ DLTX *dltx_create_from_file(const char filename[], DLTX_RETURN_CODE *err) {
 	return r;
 }
 
-DLTX_RETURN_CODE dltx_read_file(DLTX *root, const char filename[]) {
+DLTX_RETURN_CODE dltx_read_file(DLTX *root, const char filename[])
+{
 	return dltx_parser_parse_file(root, filename);
 }
 
-DLTX_RETURN_CODE dltx_read_buffer(DLTX *root, char buffer[], size_t buffer_size) {
+DLTX_RETURN_CODE dltx_read_buffer(DLTX *root, char buffer[], size_t buffer_size)
+{
 	return dltx_parser_parse_buffer(root, buffer, buffer_size);
 }
 
-static int _dltx_section_name_bsearch(const char *name, const DLTXSection **section) {
+static int _dltx_section_name_bsearch(const char *name, const DLTXSection **section)
+{
 	return strcmp(name, (*section)->name);
 }
 
-static DLTXSection *_dltx_find_section_bsearch(DLTX *root, const char name[]) {
+static DLTXSection *_dltx_find_section_bsearch(DLTX *root, const char name[])
+{
 	DLTXSection **r;
 
 	r = bsearch(
-		name, root->sections->arr, root->sections->size, sizeof(DLTXSection*),
-		(int (*)(const void*, const void*))&_dltx_section_name_bsearch
+		name, root->sections->arr, root->sections->size, sizeof(DLTXSection *),
+		(int (*)(const void *, const void *))&_dltx_section_name_bsearch
 	);
-	return (r ? *r : NULL);
+	return r ? *r : NULL;
 }
 
-static DLTXSection *_dltx_find_section(DLTX *root, const char name[]) {
+static DLTXSection *_dltx_find_section(DLTX *root, const char name[])
+{
 	DLTXSection *cur;
 
-	for(int i = 0; i < root->sections->size; i++) {
+	for (int i = 0; i < root->sections->size; i++) {
 		cur = root->sections->arr[i];
 		if (strcasecmp(cur->name, name) == 0)
 			return cur;
@@ -347,7 +362,8 @@ static DLTXSection *_dltx_find_section(DLTX *root, const char name[]) {
 	return NULL;
 }
 
-DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
+DLTXSection *dltx_find_section(DLTX *root, const char name[])
+{
 	if (!root->sections)
 		return NULL;
 
@@ -356,7 +372,8 @@ DLTXSection *dltx_find_section(DLTX *root, const char name[]) {
 		_dltx_find_section(root, name);
 }
 
-DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
+DLTXSection *dltx_create_new_section(DLTX *root, const char name[])
+{
 	DLTXSection *s;
 
 	if ((root->flags & DLTX_READONLY) > 0)
@@ -369,7 +386,8 @@ DLTXSection *dltx_create_new_section(DLTX *root, const char name[]) {
 	return s;
 }
 
-const char *dltx_get_key(DLTX *root, const char section[], const char key[]) {
+const char *dltx_get_key(DLTX *root, const char section[], const char key[])
+{
 	DLTXSection *s;
 	DLTXKey *k;
 
@@ -384,14 +402,15 @@ const char *dltx_get_key(DLTX *root, const char section[], const char key[]) {
 	return k->value;
 }
 
-bool dltx_delete_section(DLTX *root, const char name[]) {
+bool dltx_delete_section(DLTX *root, const char name[])
+{
 	DLTXSection *s;
 
 	if ((root->flags & DLTX_READONLY) > 0)
 		return false;
 
 	s = dltx_find_section(root, name);
-	if(!s)
+	if (!s)
 		return false;
 
 	dynarray_remove(root->sections, s);
@@ -401,38 +420,48 @@ bool dltx_delete_section(DLTX *root, const char name[]) {
 	return true;
 }
 
-void dltx_set_readonly(DLTX *root, bool ro) {
+void dltx_set_readonly(DLTX *root, bool ro)
+{
 	if (ro)
 		root->flags |= DLTX_READONLY;
 	else
 		root->flags &= ~DLTX_READONLY;
 }
 
-void dltx_set_strict_mode(DLTX *root, bool strict) {
+void dltx_set_strict_mode(DLTX *root, bool strict)
+{
 	if (strict)
 		root->flags |= DLTX_STRICT;
 	else
 		root->flags &= ~DLTX_STRICT;
 }
 
-static int _dltx_section_name_cmp(const DLTXSection **a, const DLTXSection **b) {
-       return strcmp((*a)->name, (*b)->name);
+static int _dltx_section_name_cmp(const DLTXSection **a, const DLTXSection **b)
+{
+	return strcmp((*a)->name, (*b)->name);
 }
 
-void dltx_sort(DLTX* root) {
-	qsort(root->sections->arr, root->sections->size, sizeof(DLTXSection*), (int (*)(const void*, const void*))&_dltx_section_name_cmp);
+void dltx_sort(DLTX *root)
+{
+	qsort(
+		root->sections->arr, root->sections->size, sizeof(DLTXSection *),
+		(int (*)(const void *, const void *))&_dltx_section_name_cmp
+	);
 	root->flags |= DLTX_SORTED;
 }
 
-static void _print_all_keys(DLTXSection *s, FILE *out) {
+static void _print_all_keys(DLTXSection *s, FILE *out)
+{
 	const char *v;
+
 	DYNARRAY_INLINE_FOREACH(s->keys, DLTXKey) {
 		v = (*it)->value;
 		fprintf(out, "%s = %s\n", (*it)->name, v ? v : "");
 	}
 }
 
-int dltx_save_to_file(DLTX *root, FILE *out) {
+int dltx_save_to_file(DLTX *root, FILE *out)
+{
 	if (!root)
 		return 1;
 

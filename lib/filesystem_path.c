@@ -4,7 +4,8 @@
 
 #include "filesystem_path.h"
 
-int stcore_filesystem_path_init(stcore_filesystem_path *p, const char name[]) {
+int stcore_filesystem_path_init(stcore_filesystem_path *p, const char name[])
+{
 	size_t i;
 
 	p->len = 0;
@@ -24,7 +25,8 @@ int stcore_filesystem_path_init(stcore_filesystem_path *p, const char name[]) {
 	return 0;
 }
 
-stcore_filesystem_path *stcore_filesystem_path_create(const char path[]) {
+stcore_filesystem_path *stcore_filesystem_path_create(const char path[])
+{
 	stcore_filesystem_path *p = malloc(sizeof(stcore_filesystem_path));
 
 	stcore_filesystem_path_init(p, path);
@@ -32,7 +34,8 @@ stcore_filesystem_path *stcore_filesystem_path_create(const char path[]) {
 	return p;
 }
 
-int stcore_filesystem_path_copy(const stcore_filesystem_path src, stcore_filesystem_path *dest) {
+int stcore_filesystem_path_copy(const stcore_filesystem_path src, stcore_filesystem_path *dest)
+{
 	if (!dest)
 		return -1;
 
@@ -40,13 +43,15 @@ int stcore_filesystem_path_copy(const stcore_filesystem_path src, stcore_filesys
 	return 0;
 }
 
-int stcore_filesystem_path_cmp(const stcore_filesystem_path a, const stcore_filesystem_path b) {
+int stcore_filesystem_path_cmp(const stcore_filesystem_path a, const stcore_filesystem_path b)
+{
 	return a.scount != b.scount ?
 	    (a.scount > b.scount ? 1 : -1) :
 	    strcasecmp(a.target, b.target);
 }
 
-int stcore_filesystem_path_dirname(const stcore_filesystem_path a, stcore_filesystem_path *dir) {
+int stcore_filesystem_path_dirname(const stcore_filesystem_path a, stcore_filesystem_path *dir)
+{
 	if (!dir)
 		return -1;
 
@@ -62,14 +67,15 @@ int stcore_filesystem_path_dirname(const stcore_filesystem_path a, stcore_filesy
 	strncpy(dir->target, a.target, dir->len);
 	dir->target[dir->len] = 0;
 
-	for(unsigned short i = 0; dir->target[i]; i++)
+	for (unsigned short i = 0; dir->target[i]; i++)
 		if (dir->target[i] == '/')
 			dir->last_sep_offset = i;
 
 	return 0;
 }
 
-int stcore_filesystem_path_basename(const stcore_filesystem_path p, stcore_filesystem_path *base) {
+int stcore_filesystem_path_basename(const stcore_filesystem_path p, stcore_filesystem_path *base)
+{
 	if (!base)
 		return -1;
 
@@ -82,7 +88,8 @@ int stcore_filesystem_path_basename(const stcore_filesystem_path p, stcore_files
 	return 0;
 }
 
-int stcore_filesystem_path_append(const stcore_filesystem_path src, stcore_filesystem_path *dst) {
+int stcore_filesystem_path_append(const stcore_filesystem_path src, stcore_filesystem_path *dst)
+{
 	if (!dst)
 		return -1;
 
@@ -100,7 +107,8 @@ int stcore_filesystem_path_append(const stcore_filesystem_path src, stcore_files
 	return 0;
 }
 
-int stcore_filesystem_path_prepend(const stcore_filesystem_path src, stcore_filesystem_path *dst) {
+int stcore_filesystem_path_prepend(const stcore_filesystem_path src, stcore_filesystem_path *dst)
+{
 	size_t off = 0;
 	char buf[PATH_MAX] = {0};
 

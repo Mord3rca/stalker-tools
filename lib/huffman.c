@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static unsigned textsize = 0, codesize = 0;
+static unsigned int textsize, codesize;
 
 /********** LZSS compression **********/
 
@@ -21,10 +21,10 @@ static unsigned textsize = 0, codesize = 0;
 static unsigned char text_buf[N + F];
 static int match_position, match_length, lson[N + 1], rson[N + 257], dad[N + 1];
 
-static unsigned code, len;
-static unsigned tim_size = 0;
+static unsigned int code, len;
+static unsigned int tim_size;
 
-static unsigned freq[T + 1]; /* frequency table */
+static unsigned int freq[T + 1]; /* frequency table */
 
 static int prnt[T + N_CHAR + 1]; /* pointers to parent nodes, except for the */
 /* elements [T..T + N_CHAR - 1] which are used to get */
@@ -32,13 +32,12 @@ static int prnt[T + N_CHAR + 1]; /* pointers to parent nodes, except for the */
 
 static int son[T]; /* pointers to child nodes (son[], son[] + 1) */
 
-struct LZfs
-{
-	unsigned getbuf;
-	unsigned getlen;
+struct LZfs {
+	unsigned int getbuf;
+	unsigned int getlen;
 
-	unsigned putbuf;
-	unsigned putlen;
+	unsigned int putbuf;
+	unsigned int putlen;
 
 	unsigned char *in_start;
 	unsigned char *in_end;
@@ -51,17 +50,19 @@ struct LZfs
 
 static struct LZfs fs;
 
-static inline int _getb()
+static inline int _getb(void)
 {
-	if (fs.in_iterator == fs.in_end) return EOF;
+	if (fs.in_iterator == fs.in_end)
+		return EOF;
 	return *(fs.in_iterator++);
 }
 
 static inline void _putb(int c)
 {
-	if (fs.out_iterator == fs.out_end)
-	{
-		uint32_t out_size = (uint32_t)(fs.out_end - fs.out_start);
+	uint32_t out_size;
+
+	if (fs.out_iterator == fs.out_end) {
+		out_size = (uint32_t)(fs.out_end - fs.out_start);
 		fs.out_start = realloc(fs.out_start, out_size + 1024);
 		fs.out_iterator = fs.out_start + out_size;
 		fs.out_end = fs.out_iterator + 1024;
@@ -88,22 +89,22 @@ static inline void Init_Output(int _rsize)
 	fs.out_iterator = fs.out_start;
 }
 
-static inline uint32_t InputSize()
+static inline uint32_t InputSize(void)
 {
 	return fs.in_end - fs.in_start;
 }
 
-static inline uint32_t OutSize()
+static inline uint32_t OutSize(void)
 {
 	return fs.out_iterator - fs.out_start;
 }
 
-static inline unsigned char *OutPointer()
+static inline unsigned char *OutPointer(void)
 {
 	return fs.out_start;
 }
 
-static inline void OutRelease()
+static inline void OutRelease(void)
 {
 	free(fs.out_start);
 	fs.out_start = 0;
@@ -113,11 +114,12 @@ static inline void OutRelease()
 
 static inline int GetBit(void) /* get one bit */
 {
-	unsigned i;
+	unsigned int i;
 
-	while (fs.getlen <= 8)
-	{
-		if ((int)(i = _getb()) < 0) i = 0;
+	while (fs.getlen <= 8) {
+		i = _getb();
+		if ((int)i < 0)
+			i = 0;
 		fs.getbuf |= i << (8 - fs.getlen);
 		fs.getlen += 8;
 	}
@@ -129,11 +131,12 @@ static inline int GetBit(void) /* get one bit */
 
 static inline int GetByte(void) /* get one byte */
 {
-	unsigned i;
+	unsigned int i;
 
-	while (fs.getlen <= 8)
-	{
-		if ((int)(i = _getb()) < 0) i = 0;
+	while (fs.getlen <= 8) {
+		i = _getb();
+		if ((int)i < 0)
+			i = 0;
 		fs.getbuf |= i << (8 - fs.getlen);
 		fs.getlen += 8;
 	}
@@ -143,31 +146,28 @@ static inline int GetByte(void) /* get one byte */
 	return (int)((i & 0xff00) >> 8);
 }
 
-static inline void PutCode(int l, unsigned c) /* output c bits of code */
+static inline void PutCode(int l, unsigned int c) /* output c bits of code */
 {
 	fs.putbuf |= c >> fs.putlen;
-	if ((fs.putlen += l) >= 8)
-	{
+	fs.putlen += l;
+	if (fs.putlen >= 8) {
 		_putb(fs.putbuf >> 8);
-		if ((fs.putlen -= 8) >= 8)
-		{
+		fs.putlen -= 8;
+		if (fs.putlen >= 8) {
 			_putb(fs.putbuf);
 			codesize += 2;
 			fs.putlen -= 8;
 			fs.putbuf = c << (l - fs.putlen);
-		}
-		else
-		{
+		} else {
 			fs.putbuf <<= 8;
 			codesize++;
 		}
 	}
 }
 
-static inline void PutFlush()
+static inline void PutFlush(void)
 {
-	if (fs.putlen)
-	{
+	if (fs.putlen) {
 		_putb(fs.putbuf >> 8);
 		codesize++;
 	}
@@ -177,62 +177,60 @@ static inline void InitTree(void) /* initialize trees */
 {
 	int i;
 
-	for (i = N + 1; i <= N + 256; i++) rson[i] = NIL; /* root */
-	for (i = 0; i < N; i++) dad[i] = NIL; /* node */
+	for (i = N + 1; i <= N + 256; i++)
+		rson[i] = NIL; /* root */
+
+	for (i = 0; i < N; i++)
+		dad[i] = NIL; /* node */
 }
 
 static void InsertNode(int r) /* insert to tree */
 {
 	int i, p, cmp;
 	unsigned char *key;
-	unsigned c;
+	unsigned int c;
 
 	cmp = 1;
 	key = &text_buf[r];
 	p = N + 1 + key[0];
 	rson[r] = lson[r] = NIL;
 	match_length = 0;
-	for (;;)
-	{
-		if (cmp >= 0)
-		{
+	for (;;) {
+		if (cmp >= 0) {
 			if (rson[p] != NIL)
 				p = rson[p];
-			else
-			{
+			else {
 				rson[p] = r;
 				dad[r] = p;
 				return;
 			}
-		}
-		else
-		{
+		} else {
 			if (lson[p] != NIL)
 				p = lson[p];
-			else
-			{
+			else {
 				lson[p] = r;
 				dad[r] = p;
 				return;
 			}
 		}
-		for (i = 1; i < F; i++)
-			if ((cmp = key[i] - text_buf[p + i]) != 0)
+
+		for (i = 1; i < F; i++) {
+			cmp = key[i] - text_buf[p + i];
+			if (cmp != 0)
 				break;
-		if (i > THRESHOLD)
-		{
-			if (i > match_length)
-			{
+		}
+
+		if (i > THRESHOLD) {
+			if (i > match_length) {
 				match_position = ((r - p) & (N - 1)) - 1;
-				if ((match_length = i) >= F)
+				match_length = i;
+				if (i >= F)
 					break;
 			}
-			if (i == match_length)
-			{
-				if ((c = ((r - p) & (N - 1)) - 1) < (unsigned)match_position)
-				{
+			if (i == match_length) {
+				c = ((r - p) & (N - 1)) - 1;
+				if (c < (unsigned int)match_position)
 					match_position = c;
-				}
 			}
 		}
 	}
@@ -252,22 +250,19 @@ static void DeleteNode(int p) /* remove from tree */
 {
 	int q;
 
-	if (dad[p] == NIL) return; /* not registered */
+	if (dad[p] == NIL)
+		return; /* not registered */
 	if (rson[p] == NIL)
 		q = lson[p];
-	else
-	{
-		if (lson[p] == NIL)
-		{
+	else {
+		if (lson[p] == NIL) {
 			q = rson[p];
-		}
-		else
-		{
+		} else {
 			q = lson[p];
-			if (rson[q] != NIL)
-			{
-				do { q = rson[q]; }
-				while (rson[q] != NIL);
+			if (rson[q] != NIL) {
+				do {
+					q = rson[q];
+				} while (rson[q] != NIL);
 
 				rson[dad[q]] = lson[q];
 				dad[lson[q]] = dad[q];
@@ -290,8 +285,7 @@ static void DeleteNode(int p) /* remove from tree */
 
 /* table for encoding and decoding the upper 6 bits of position */
 /* for encoding */
-static unsigned char p_len[64] =
-{
+static unsigned char p_len[64] = {
 	0x03, 0x04, 0x04, 0x04, 0x05, 0x05, 0x05, 0x05,
 	0x05, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x06,
 	0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
@@ -302,8 +296,7 @@ static unsigned char p_len[64] =
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
 };
 
-static unsigned char p_code[64] =
-{
+static unsigned char p_code[64] = {
 	0x00, 0x20, 0x30, 0x40, 0x50, 0x58, 0x60, 0x68,
 	0x70, 0x78, 0x80, 0x88, 0x90, 0x94, 0x98, 0x9C,
 	0xA0, 0xA4, 0xA8, 0xAC, 0xB0, 0xB4, 0xB8, 0xBC,
@@ -315,8 +308,7 @@ static unsigned char p_code[64] =
 };
 
 /* for decoding */
-static unsigned char d_code[256] =
-{
+static unsigned char d_code[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -351,8 +343,7 @@ static unsigned char d_code[256] =
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
 };
 
-static unsigned char d_len[256] =
-{
+static unsigned char d_len[256] = {
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
@@ -394,16 +385,14 @@ static void StartHuff(void)
 {
 	int i, j;
 
-	for (i = 0; i < N_CHAR; i++)
-	{
+	for (i = 0; i < N_CHAR; i++) {
 		freq[i] = 1;
 		son[i] = i + T;
 		prnt[i + T] = i;
 	}
 	i = 0;
 	j = N_CHAR;
-	while (j <= R)
-	{
+	while (j <= R) {
 		freq[j] = freq[i] + freq[i + 1];
 		son[j] = i;
 		prnt[i] = prnt[i + 1] = j;
@@ -419,44 +408,38 @@ static void StartHuff(void)
 static void reconst(void)
 {
 	int i, j, k;
-	unsigned f, l;
+	unsigned int f, l;
 
 	/* collect leaf nodes in the first half of the table */
 	/* and replace the freq by (freq + 1) / 2. */
 	j = 0;
-	for (i = 0; i < T; i++)
-	{
-		if (son[i] >= T)
-		{
+	for (i = 0; i < T; i++) {
+		if (son[i] >= T) {
 			freq[j] = (freq[i] + 1) / 2;
 			son[j] = son[i];
 			j++;
 		}
 	}
 	/* begin constructing tree by connecting sons */
-	for (i = 0, j = N_CHAR; j < T; i += 2, j++)
-	{
+	for (i = 0, j = N_CHAR; j < T; i += 2, j++) {
 		k = i + 1;
 		f = freq[j] = freq[i] + freq[k];
-		for (k = j - 1; f < freq[k]; k--);
+		for (k = j - 1; f < freq[k]; k--)
+			;
 		k++;
-		l = (j - k) * sizeof(unsigned);
+		l = (j - k) * sizeof(unsigned int);
 		memmove(&freq[k + 1], &freq[k], l);
 		freq[k] = f;
 		memmove(&son[k + 1], &son[k], l);
 		son[k] = i;
 	}
 	/* connect prnt */
-	for (i = 0; i < T; i++)
-	{
-		if ((k = son[i]) >= T)
-		{
+	for (i = 0; i < T; i++) {
+		k = son[i];
+		if (k >= T)
 			prnt[k] = i;
-		}
 		else
-		{
 			prnt[k] = prnt[k + 1] = i;
-		}
 	}
 }
 
@@ -467,42 +450,42 @@ static void update(int c)
 	int i, j, k, l;
 
 	if (freq[R] == MAX_FREQ)
-	{
 		reconst();
-	}
+
 	c = prnt[c + T];
-	do
-	{
+	do {
 		k = ++freq[c];
 
 		/* if the order is disturbed, exchange nodes */
-		if ((unsigned)k > freq[l = c + 1])
-		{
-			while ((unsigned)k > freq[++l]);
+		l = c + 1;
+		if ((unsigned int)k > freq[l]) {
+			while ((unsigned int)k > freq[++l])
+				;
 			l--;
 			freq[c] = freq[l];
 			freq[l] = k;
 
 			i = son[c];
 			prnt[i] = l;
-			if (i < T) prnt[i + 1] = l;
+			if (i < T)
+				prnt[i + 1] = l;
 
 			j = son[l];
 			son[l] = i;
 
 			prnt[j] = c;
-			if (j < T) prnt[j + 1] = c;
+			if (j < T)
+				prnt[j + 1] = c;
 			son[c] = j;
 
 			c = l;
 		}
-	}
-	while ((c = prnt[c]) != 0); /* repeat up to root */
+	} while ((c = prnt[c]) != 0); /* repeat up to root */
 }
 
-static void EncodeChar(unsigned c)
+static void EncodeChar(unsigned int c)
 {
-	unsigned i;
+	unsigned int i;
 	int j, k;
 
 	i = 0;
@@ -510,30 +493,29 @@ static void EncodeChar(unsigned c)
 	k = prnt[c + T];
 
 	/* travel from leaf to root */
-	do
-	{
+	do {
 		i >>= 1;
 
 		/* if node's address is odd-numbered, choose bigger brother node */
-		if (k & 1) i += 0x8000;
+		if (k & 1)
+			i += 0x8000;
 
 		j++;
 		k = prnt[k];
-	}
-	while (k != R);
+	} while (k != R);
 	PutCode(j, i);
 	code = i;
 	len = j;
 	update(c);
 }
 
-static void EncodePosition(unsigned c)
+static void EncodePosition(unsigned int c)
 {
-	unsigned i;
+	unsigned int i;
 
 	/* output upper 6 bits by table lookup */
 	i = c >> 6;
-	PutCode(p_len[i], (unsigned)p_code[i] << 8);
+	PutCode(p_len[i], (unsigned int)p_code[i] << 8);
 
 	/* output lower 6 bits verbatim */
 	PutCode(6, (c & 0x3f) << 10);
@@ -541,15 +523,14 @@ static void EncodePosition(unsigned c)
 
 static int DecodeChar(void)
 {
-	unsigned c;
+	unsigned int c;
 
 	c = son[R];
 
 	/* travel from root to leaf, */
 	/* choosing the smaller child node (son[]) if the read bit is 0, */
 	/* the bigger (son[]+1} if 1 */
-	while (c < T)
-	{
+	while (c < T) {
 		c += GetBit();
 		c = son[c];
 	}
@@ -560,19 +541,18 @@ static int DecodeChar(void)
 
 static int DecodePosition(void)
 {
-	unsigned i, j, c;
+	unsigned int i, j, c;
 
 	/* recover upper 6 bits from table */
 	i = GetByte();
-	c = (unsigned)d_code[i] << 6;
+	c = (unsigned int)d_code[i] << 6;
 	j = d_len[i];
 
 	/* read lower 6 bits verbatim */
 	j -= 2;
 	while (j--)
-	{
 		i = (i << 1) + GetBit();
-	}
+
 	return (int)(c | (i & 0x3f));
 }
 
@@ -602,25 +582,20 @@ static void Encode(void) /* compression */
 	for (i = 1; i <= F; i++)
 		InsertNode(r - i);
 	InsertNode(r);
-	do
-	{
+	do {
 		if (match_length > len)
 			match_length = len;
-		if (match_length <= THRESHOLD)
-		{
+		if (match_length <= THRESHOLD) {
 			match_length = 1;
 			// textsize==56158 - FATAL :(
 			EncodeChar(text_buf[r]);
-		}
-		else
-		{
+		} else {
 			EncodeChar(255 - THRESHOLD + match_length);
 			EncodePosition(match_position);
 		}
 		last_match_length = match_length;
 		for (i = 0; i < last_match_length &&
-		     (c = _getb()) != EOF; i++)
-		{
+		     (c = _getb()) != EOF; i++) {
 			DeleteNode(s);
 			text_buf[s] = (unsigned char)c;
 			if (s < F - 1)
@@ -630,15 +605,14 @@ static void Encode(void) /* compression */
 			InsertNode(r);
 		}
 		textsize += i;
-		while (i++ < last_match_length)
-		{
+		while (i++ < last_match_length) {
 			DeleteNode(s);
 			s = (s + 1) & (N - 1);
 			r = (r + 1) & (N - 1);
-			if (--len) InsertNode(r);
+			if (--len)
+				InsertNode(r);
 		}
-	}
-	while (len > 0);
+	} while (len > 0);
 	PutFlush();
 	tim_size = textsize;
 }
@@ -652,7 +626,8 @@ static void Decode(void) /* recover */
 	textsize |= (_getb() << 8);
 	textsize |= (_getb() << 16);
 	textsize |= (_getb() << 24);
-	if (textsize == 0) return;
+	if (textsize == 0)
+		return;
 
 	Init_Output(textsize);
 
@@ -660,22 +635,17 @@ static void Decode(void) /* recover */
 	for (i = 0; i < N - F; i++)
 		text_buf[i] = 0x20;
 	r = N - F;
-	for (count = 0; count < textsize;)
-	{
+	for (count = 0; count < textsize;) {
 		c = DecodeChar();
-		if (c < 256)
-		{
+		if (c < 256) {
 			_putb(c);
 			text_buf[r++] = (unsigned char)c;
 			r &= (N - 1);
 			count++;
-		}
-		else
-		{
+		} else {
 			i = (r - DecodePosition() - 1) & (N - 1);
 			j = c - 255 + THRESHOLD;
-			for (k = 0; k < j; k++)
-			{
+			for (k = 0; k < j; k++) {
 				c = text_buf[(i + k) & (N - 1)];
 				_putb(c);
 				text_buf[r++] = (unsigned char)c;
@@ -687,18 +657,20 @@ static void Decode(void) /* recover */
 	tim_size = count;
 }
 
-void huffman_compress(void** dest, size_t *dest_sz, void* src, size_t src_sz)
+void huffman_compress(void **dest, size_t *dest_sz, void *src, size_t src_sz)
 {
 	unsigned char *start = src;
+
 	Init_Input(start, start + src_sz);
 	Encode();
 	*dest = OutPointer();
 	*dest_sz = OutSize();
 }
 
-void huffman_decompress(void** dest, size_t* dest_sz, void* src, size_t src_sz)
+void huffman_decompress(void **dest, size_t *dest_sz, void *src, size_t src_sz)
 {
 	unsigned char *start = src;
+
 	Init_Input(start, start + src_sz);
 	Decode();
 	*dest = OutPointer();
