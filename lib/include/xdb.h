@@ -25,7 +25,7 @@ typedef struct {
 	long fpos;		// position of header start in the file (without type/size)
 } xdb_chunk;
 
-bool xdb_chunk_is_compressed(const xdb_chunk);
+bool xdb_chunk_is_compressed(const xdb_chunk a);
 
 /*
  * XDB METADATA
@@ -42,7 +42,7 @@ typedef struct {
 	uint32_t ptr;
 } xdb_metadata_entry;
 
-void free_xdb_metadata_entry(xdb_metadata_entry*);
+void free_xdb_metadata_entry(xdb_metadata_entry *e);
 
 #define XDB_METADATA_ENTRY_IS_DIR(e)	(e->real_size == 0 && e->ptr == 0)
 
@@ -59,19 +59,19 @@ typedef struct {
 	char path[PATH_MAX];
 } xdb;
 
-xdb *xdb_archive_open(const char[PATH_MAX]);	// API may change (R/W flags, keep loaded, ...)
-void xdb_archive_close(xdb*);
+xdb *xdb_archive_open(const char path[PATH_MAX]);	// API may change (R/W flags, keep loaded, ...)
+void xdb_archive_close(xdb *archive);
 
-const xdb_chunk *xdb_get_chunk(const xdb*, unsigned long);
-unsigned char *xdb_get_chunk_data(const xdb*, const xdb_chunk*, size_t*);
+const xdb_chunk *xdb_get_chunk(const xdb *x, unsigned long type);
+unsigned char *xdb_get_chunk_data(const xdb *x, const xdb_chunk *c, size_t *size);
 
-unsigned char *xdb_archive_get_member_data(const xdb*, const char[], size_t*);
+unsigned char *xdb_archive_get_member_data(const xdb *archive, const char member[], size_t *buffsize);
 
-DLTX *xdb_get_header(const xdb*);
+DLTX *xdb_get_header(const xdb *x);
 
-struct dynarray* xdb_read_metadata(const xdb*);
-void free_xdb_metadata(struct dynarray*);
+struct dynarray *xdb_read_metadata(const xdb *x);
+void free_xdb_metadata(struct dynarray *entries);
 
-int xdb_extract_all(xdb*, const char[]);
+int xdb_extract_all(xdb *archive, const char path[]);
 
 #endif  // _HEADER_ARCHIVE_XDB
