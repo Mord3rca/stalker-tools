@@ -5,9 +5,9 @@
 
 #include "dynarray.h"
 
-#define DLTX_READONLY	1 << 0
-#define DLTX_SORTED	1 << 1
-#define DLTX_STRICT	1 << 2
+#define DLTX_READONLY	(1 << 0)
+#define DLTX_SORTED	(1 << 1)
+#define DLTX_STRICT	(1 << 2)
 
 typedef enum {
 	NO_ERROR = 0,
@@ -22,7 +22,7 @@ typedef enum {
 	EVAL_MISSING_SECTION,
 } DLTX_RETURN_CODE;
 
-const char *dltx_return_code_to_str(DLTX_RETURN_CODE);
+const char *dltx_return_code_to_str(DLTX_RETURN_CODE err);
 
 extern DLTX_RETURN_CODE dltx_init_code;
 
@@ -64,56 +64,56 @@ typedef struct {
 /*
  * DLTXKEY methods
  */
-DLTXKey *dltx_create_key(const char[], const char[]);
-void free_dltx_key(DLTXKey*);
+DLTXKey *dltx_create_key(const char name[], const char value[]);
+void free_dltx_key(DLTXKey *k);
 
-DLTXKey *dltx_key_copy(const DLTXKey*);
+DLTXKey *dltx_key_copy(const DLTXKey *k);
 
-void dltx_key_set_value(DLTXKey*, const char[]);
-void dltx_key_update(DLTXKey*, const DLTXKey*);
+void dltx_key_set_value(DLTXKey *k, const char value[]);
+void dltx_key_update(DLTXKey *dest, const DLTXKey *src);
 
 /*
  * DLTXSECTION methods
  */
 
-DLTXSection *dltx_create_section(const char[]);
-void free_dltx_section(DLTXSection*);
+DLTXSection *dltx_create_section(const char name[]);
+void free_dltx_section(DLTXSection *s);
 
-DLTXKey *dltx_section_get_key(DLTXSection*, const char[]);
-DLTX_RETURN_CODE dltx_section_set_key(DLTXSection*, const char[], const char[]);
-DLTX_RETURN_CODE dltx_section_del_key(DLTXSection*, const char[]);
+DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[]);
+DLTX_RETURN_CODE dltx_section_set_key(DLTXSection *sec, const char key[], const char value[]);
+DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[]);
 
-DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection*);
+DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection *sec);
 
-DLTX_RETURN_CODE dltx_section_update_key(DLTXSection*, const DLTXKey*);
+DLTX_RETURN_CODE dltx_section_update_key(DLTXSection *sec, const DLTXKey *src);
 
-DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection*, const DLTXSection*);
+DLTX_RETURN_CODE dltx_section_update_keys(DLTXSection *sec, const DLTXSection *src);
 
-void dltx_section_sort(DLTXSection*);
+void dltx_section_sort(DLTXSection *s);
 
 /*
  * DLTX methods
  */
 
 DLTX *dltx_create(void);
-void free_dltx(DLTX*);
+void free_dltx(DLTX *l);
 
-DLTX *dltx_create_from_file(const char[], DLTX_RETURN_CODE*);
-DLTX_RETURN_CODE dltx_read_file(DLTX*, const char[]);
-DLTX_RETURN_CODE dltx_read_buffer(DLTX*, char[], size_t);
+DLTX *dltx_create_from_file(const char filename[], DLTX_RETURN_CODE *err);
+DLTX_RETURN_CODE dltx_read_file(DLTX *root, const char filename[]);
+DLTX_RETURN_CODE dltx_read_buffer(DLTX *root, char buffer[], size_t buffer_size);
 
-DLTXSection *dltx_find_section(DLTX*, const char[]);
-DLTXSection *dltx_create_new_section(DLTX*, const char[]);
+DLTXSection *dltx_find_section(DLTX *root, const char name[]);
+DLTXSection *dltx_create_new_section(DLTX *root, const char name[]);
 
-const char *dltx_get_key(DLTX*, const char[], const char[]);
+const char *dltx_get_key(DLTX *root, const char section[], const char key[]);
 
-bool dltx_delete_section(DLTX*, const char[]);
+bool dltx_delete_section(DLTX *root, const char name[]);
 
-void dltx_set_readonly(DLTX*, bool);
-void dltx_set_strict_mode(DLTX*, bool);
+void dltx_set_readonly(DLTX *root, bool ro);
+void dltx_set_strict_mode(DLTX *root, bool strict);
 
-void dltx_sort(DLTX*);
+void dltx_sort(DLTX *root);
 
-int dltx_save_to_file(DLTX*, FILE*);
+int dltx_save_to_file(DLTX *root, FILE *out);
 
 #endif //_DLTX_HEADER
