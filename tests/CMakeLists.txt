@@ -18,3 +18,13 @@ add_compile_options(
 target_sources(${PROJECT_NAME} PRIVATE ${testssrc})
 
 add_test(NAME stcoretests COMMAND ./${PROJECT_NAME})
+
+add_test(
+    NAME basic_dltx COMMAND ./basic-utest.sh
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_tests_properties(
+    basic_dltx PROPERTIES ENVIRONMENT_MODIFICATION
+    PATH=path_list_prepend:${CMAKE_BINARY_DIR}/src
+)

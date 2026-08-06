@@ -11,17 +11,17 @@ test_file() {
 	ifile="${1}"
 
 	if [ -v NO_VALGRIND ]; then
-		out/src/dltx-resolver "tests/data/${ifile}" >"${wfile}"
+		dltx-resolver "data/${ifile}" >"${wfile}"
 	else
-		valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full out/src/dltx-resolver "tests/data/${ifile}" >"${wfile}"
+		valgrind --show-error-list=yes --error-exitcode=1 --leak-check=full dltx-resolver "data/${ifile}" >"${wfile}"
 	fi
 
-	read -r ihash _ < <(md5sum "tests/expected/${ifile}")
+	read -r ihash _ < <(md5sum "expected/${ifile}")
 	read -r whash _ < <(md5sum "${wfile}")
 
 	[ "${ihash}" == "${whash}" ] || {
 		echo "Hash did not match, aborting"
-		diff "tests/expected/${ifile}" "${wfile}"
+		diff "expected/${ifile}" "${wfile}"
 		exit 1
 	} >&2
 }
@@ -29,7 +29,7 @@ test_file() {
 if [ "${#}" -eq 1 ]; then
 	test_file "${@}"
 else
-	for f in tests/expected/*.ltx; do
+	for f in expected/*.ltx; do
 		echo "--- TESTING ${f} ---"
 		test_file "$(basename "${f}")"
 	done
