@@ -16,15 +16,16 @@ const size_t dltx_parser_max_inheritence = 16;
 
 static const char _orphan_section_name[] = "__default__";
 
-const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
-const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
-const char dltx_section_regex_pattern[] = "([!@]{0,2})\\[([[:graph:]]*)\\](:([0-9A-Za-z .,_-]*))?";
+static const char dltx_key_regex_pattern[] = "([[:graph:]]*)[[:blank:]]*=[[:blank:]]*(.*)";
+static const char dltx_include_regex_pattern[] = "#include[[:blank:]]*\"([[:graph:]]*)\"";
+static const char dltx_section_regex_pattern[] = "([!@]{0,2})\\[([[:graph:]]*)\\](:([0-9A-Za-z .,_-]*))?";
 
 regex_t dltx_key_regex;
 regex_t dltx_include_regex;
 regex_t dltx_section_regex;
 
-DLTX_RETURN_CODE dltx_parser_init(void) {
+DLTX_RETURN_CODE dltx_parser_init(void)
+{
 	if (regcomp(&dltx_key_regex, dltx_key_regex_pattern, REG_EXTENDED) != 0)
 		return INIT_ERROR;
 
@@ -37,7 +38,8 @@ DLTX_RETURN_CODE dltx_parser_init(void) {
 	return NO_ERROR;
 }
 
-void dltx_parser_cleanup(void) {
+void dltx_parser_cleanup(void)
+{
 	regfree(&dltx_key_regex);
 	regfree(&dltx_include_regex);
 	regfree(&dltx_section_regex);
@@ -51,20 +53,31 @@ typedef enum {
 	OVERRIDE_NONE,
 } OVERRIDE_TYPE;
 
-static OVERRIDE_TYPE _char_to_override_enum(const char modifier[2] /* Assuming min size of 2 */) {
+static OVERRIDE_TYPE _char_to_override_enum(const char modifier[2] /* Assuming min size of 2 */)
+{
 	switch (modifier[0]) {
 	case '!':
 		return modifier[1] == '!' ? OVERRIDE_DELETE : OVERRIDE;
-		;;
+
 	case '@':
 		return OVERRIDE_SAFE;
-		;;
+
 	default:
 		return OVERRIDE_NONE;
 	}
 }
 
 typedef struct _DLTXParser_s DLTXParser;
+
+typedef void (*error_cb)(DLTXParser *, DLTX_RETURN_CODE, const char *, ...);
+typedef void (*new_line_cb)(DLTXParser *, char[]);
+typedef void (*new_key_cb)(DLTXParser *, char[], char[]);
+typedef void (*include_directive_cb)(DLTXParser *, char[]);
+typedef void (*glob_include_directive_cb)(DLTXParser *, char[]);
+typedef void (*new_section_cb)(DLTXParser *, char[], char[]);
+typedef void (*section_override_cb)(DLTXParser *, OVERRIDE_TYPE, char[], char[]);
+typedef void (*section_deletion_cb)(DLTXParser *, char[], char[]);
+
 struct _DLTXParser_s {
 	DLTX *output;
 
@@ -84,25 +97,26 @@ struct _DLTXParser_s {
 
 	bool is_parsing_modfile;
 
-	void (*on_error)(DLTXParser*, DLTX_RETURN_CODE, const char*, ...);
-	void (*on_new_line)(DLTXParser*, char[]);
-	void (*on_new_key)(DLTXParser*, char[], char[]);
-	void (*on_include_directive)(DLTXParser*, char[]);
-	void (*on_glob_include_directive)(DLTXParser*, char[]);
-	void (*on_new_section)(DLTXParser*, char[], char[]);
-	void (*on_override_section)(DLTXParser*, OVERRIDE_TYPE, char[], char[]);
-	void (*on_deletion_section)(DLTXParser*, char[], char[]);
+	error_cb on_error;
+	new_line_cb on_new_line;
+	new_key_cb on_new_key;
+	include_directive_cb on_include_directive;
+	glob_include_directive_cb on_glob_include_directive;
+	new_section_cb on_new_section;
+	section_override_cb on_override_section;
+	section_deletion_cb on_deletion_section;
 };
 
-DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser*, const char[]);
+static DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[]);
 
-static void _dltx_parser_append_inheritance(DLTXSection *s, const char name[]) {
+static void _dltx_parser_append_inheritance(DLTXSection *s, const char name[])
+{
 	char **arr = s->inheritance, **n = NULL;
 	char **arr_end = arr + dltx_parser_max_inheritence;
 
-	for (;arr < arr_end; arr++) {
-		if (! *arr) {
-			if(!n)
+	for (; arr < arr_end; arr++) {
+		if (!(*arr)) {
+			if (!n)
 				n = arr;
 
 			continue;
@@ -116,7 +130,8 @@ static void _dltx_parser_append_inheritance(DLTXSection *s, const char name[]) {
 		*n = strdup(name);
 }
 
-static void _dltx_parser_delete_inheritance(DLTXSection *s, const char name[]) {
+static void _dltx_parser_delete_inheritance(DLTXSection *s, const char name[])
+{
 	char **arr = s->inheritance;
 	char **arr_end = arr + dltx_parser_max_inheritence;
 
@@ -129,7 +144,8 @@ static void _dltx_parser_delete_inheritance(DLTXSection *s, const char name[]) {
 }
 
 
-static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) {
+static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[])
+{
 	int i;
 	char **ar;
 	char *str, *token, *saveptr;
@@ -137,12 +153,12 @@ static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) 
 	if (!inheritance || *inheritance == 0)
 		return;
 
-	ar = calloc(sizeof(char*), dltx_parser_max_inheritence);
-	memset(ar, 0, sizeof(char*) * dltx_parser_max_inheritence);
+	ar = calloc(dltx_parser_max_inheritence, sizeof(char *));
+	memset(ar, 0, sizeof(char *) * dltx_parser_max_inheritence);
 
 	root->cur_section->inheritance = ar;
 
-	for(i = 0, str = inheritance; ; str = NULL) {
+	for (i = 0, str = inheritance; ; str = NULL) {
 		if (i >= dltx_parser_max_inheritence) {
 			root->on_error(root, EVAL_GENERIC_ERROR, "TOO MUCH INHERITANCE ABORT");
 			break;
@@ -161,7 +177,8 @@ static void dltx_parser_parse_inheritance(DLTXParser *root, char inheritance[]) 
 }
 
 
-void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inheritance[]) {
+void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inheritance[])
+{
 	DLTXSection *s = dltx_find_section(root->bases, name);
 
 	if (s != NULL) {
@@ -179,7 +196,8 @@ void dltx_parser_default_on_new_section(DLTXParser *root, char name[], char inhe
 	dltx_parser_parse_inheritance(root, inheritance);
 }
 
-void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE otype, char name[], char inheritance[]) {
+void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE otype, char name[], char inheritance[])
+{
 	DLTXSection *s = dltx_find_section(root->overrides, name);
 
 	if (s == NULL) {
@@ -196,11 +214,12 @@ void dltx_parser_default_on_override_section(DLTXParser *root, OVERRIDE_TYPE oty
 	root->cur_section = s;
 }
 
-void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char inheritance[]) {
+void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char inheritance[])
+{
 	DLTXSection *s = dltx_find_section(root->deletions, name);
 
 	if (s) {
-		if (s->keys->size == 0 ) {
+		if (s->keys->size == 0) {
 			root->on_error(root, EVAL_GENERIC_ERROR, "Section [%s] was marked for deletion twice", name);
 			return;
 		}
@@ -212,7 +231,8 @@ void dltx_parser_default_on_deletion_section(DLTXParser *root, char name[], char
 	dltx_create_new_section(root->deletions, name);
 }
 
-static void _dltx_parser_on_delete_key(DLTXParser *root, char key[], char value[]) {
+static void _dltx_parser_on_delete_key(DLTXParser *root, char key[], char value[])
+{
 	DLTXSection *s = dltx_find_section(root->deletions, root->cur_section->name);
 
 	if (!s) {
@@ -227,17 +247,22 @@ static void _dltx_parser_on_delete_key(DLTXParser *root, char key[], char value[
 	dltx_section_set_key(s, key + 1, NULL);
 }
 
-static void _dltx_parser_on_new_key(DLTXParser *root, char key[], char value[]) {
+static void _dltx_parser_on_new_key(DLTXParser *root, char key[], char value[])
+{
+	DLTXKey *k;
+
+	(void)k;
 	dltx_section_set_key(root->cur_section, key, value);
 
 #ifdef DLTX_TRACE
-	DLTXKey *k = dltx_section_get_key(root->cur_section, key);
+	k = dltx_section_get_key(root->cur_section, key);
 	k->file = root->cur_file_path;
 	k->line = root->cur_line;
 #endif
 }
 
-void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) {
+void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[])
+{
 	if (root->cur_section == NULL) {
 		if (root->output->flags & DLTX_STRICT) {
 			root->on_error(root, PARSER_LOGIC_ERROR, "Cannot insert key into null section");
@@ -251,7 +276,8 @@ void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[]) 
 	(key[0] == '!' ? _dltx_parser_on_delete_key : _dltx_parser_on_new_key)(root, key, value);
 }
 
-void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
+void dltx_parser_default_on_include_directive(DLTXParser *root, char path[])
+{
 	DLTX_RETURN_CODE err;
 	char *from = root->cur_file_path;
 	char *to = filesystem_path_append2(from, path);
@@ -269,7 +295,8 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[]) {
 	root->cur_line = sline;
 }
 
-void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]) {
+void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[])
+{
 	fs_return_code err;
 	char **paths = NULL;
 	char *to = filesystem_path_append2(root->cur_file_path, path);
@@ -290,24 +317,26 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 	free(paths);
 }
 
-static bool _is_globbing(const char path[]) {
+static bool _is_globbing(const char path[])
+{
 	const char *start = path;
 	const char *end = path + strlen(path);
 
 	// start from the end since most of glob is there.
-	while(end > start)
-		if( *(--end) == '*')
+	while (end > start)
+		if (*(--end) == '*')
 			return true;
 	return false;
 }
 
-void dltx_parser_default_process_line(DLTXParser *root, char *line) {
+void dltx_parser_default_process_line(DLTXParser *root, char *line)
+{
 	char *inheritance;
 	OVERRIDE_TYPE otype;
 	size_t max_group = 5;  // Based on regex pattern @ beginning of the file
 	regmatch_t pmatch[max_group];
 
-	if(*line == '\0')
+	if (*line == '\0')
 		return;
 
 	// Avoid blank lines
@@ -345,7 +374,7 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 		}
 
 		otype = _char_to_override_enum(line + pmatch[1].rm_so);
-		switch(otype) {
+		switch (otype) {
 		case OVERRIDE:
 		case OVERRIDE_SAFE:
 			root->on_override_section(root, otype, line + pmatch[2].rm_so, inheritance);
@@ -363,7 +392,8 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line) {
 	root->on_new_key(root, line, NULL);
 }
 
-void dltx_parser_default_on_error(DLTXParser *root, DLTX_RETURN_CODE err, const char *format, ...) {
+void dltx_parser_default_on_error(DLTXParser *root, DLTX_RETURN_CODE err, const char *format, ...)
+{
 	va_list args;
 
 	fputs("DLTX Parser - ", stderr);
@@ -374,7 +404,8 @@ void dltx_parser_default_on_error(DLTXParser *root, DLTX_RETURN_CODE err, const 
 	root->err = err;
 }
 
-DLTXParser *dltx_create_parser() {
+DLTXParser *dltx_create_parser(void)
+{
 	DLTXParser *e = malloc(sizeof(DLTXParser));
 
 	e->bases = dltx_create();
@@ -400,7 +431,8 @@ DLTXParser *dltx_create_parser() {
 	return e;
 }
 
-void free_dltx_parser(DLTXParser *e) {
+void free_dltx_parser(DLTXParser *e)
+{
 	free_dltx(e->bases);
 	free_dltx(e->results);
 	free_dltx(e->overrides);
@@ -409,12 +441,14 @@ void free_dltx_parser(DLTXParser *e) {
 	free(e);
 }
 
-static bool _per_var_deletion(DLTXKey *key, DLTXSection *s) {
+static bool _per_var_deletion(DLTXKey *key, DLTXSection *s)
+{
 	dltx_section_del_key(s, key->name);
 	return true;
 }
 
-static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXParser *root) {
+static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXParser *root)
+{
 	DLTXSection *f;
 
 	// Full deletion case
@@ -433,20 +467,19 @@ static bool _dltx_apply_overrides_deletions_iterator(DLTXSection *sect, DLTXPars
 
 	// per veriable deletion
 	f = dltx_find_section(root->bases, sect->name);
-	if (f) {
+	if (f)
 		dynarray_foreach(sect->keys, (dynarray_cb)&_per_var_deletion, f);
-	}
 
 	f = dltx_find_section(root->overrides, sect->name);
-	if (f) {
+	if (f)
 		dynarray_foreach(sect->keys, (dynarray_cb)&_per_var_deletion, f);
-	}
 	// TODO: Error management if key does not exist at all
 
 	return root->err == NO_ERROR;
 }
 
-static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root) {
+static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root)
+{
 	if (dltx_find_section(root->bases, name) == NULL)
 		dltx_create_new_section(root->bases, name);
 
@@ -454,13 +487,15 @@ static bool _dltx_apply_soverrides_create_iterator(char *name, DLTXParser *root)
 }
 
 #ifdef DLTX_TRACE
-static bool _merge_files_array(char **obj, struct dynarray *dest) {
+static bool _merge_files_array(char **obj, struct dynarray *dest)
+{
 	dynarray_insert(dest, obj);
 	return true;
 }
 #endif
 
-static void _dltx_parser_override_inheritance(DLTXSection *base, const DLTXSection *over) {
+static void _dltx_parser_override_inheritance(DLTXSection *base, const DLTXSection *over)
+{
 	char **arr = base->inheritance, **barr;
 	char **arr_end = arr + dltx_parser_max_inheritence;
 
@@ -468,13 +503,13 @@ static void _dltx_parser_override_inheritance(DLTXSection *base, const DLTXSecti
 		return;
 
 	if (!base->inheritance) {
-		base->inheritance = calloc(sizeof(char*), dltx_parser_max_inheritence);
-	        memset(base->inheritance, 0, sizeof(char*) * dltx_parser_max_inheritence);
+		base->inheritance = calloc(dltx_parser_max_inheritence, sizeof(char *));
+		memset(base->inheritance, 0, sizeof(char *) * dltx_parser_max_inheritence);
 
 		barr = base->inheritance;
 		arr = over->inheritance;
 		arr_end = arr + dltx_parser_max_inheritence;
-		for (;arr < arr_end; arr++) {
+		for (; arr < arr_end; arr++) {
 			if (*arr && **arr == '!')
 				continue;
 
@@ -485,7 +520,7 @@ static void _dltx_parser_override_inheritance(DLTXSection *base, const DLTXSecti
 	}
 
 	for (; arr < arr_end; arr++) {
-		if (! *arr)
+		if (!(*arr))
 			continue;
 
 		if ((**arr) == '!') {
@@ -499,7 +534,8 @@ static void _dltx_parser_override_inheritance(DLTXSection *base, const DLTXSecti
 
 static DLTXSection *_dltx_parser_evaluate_section(DLTXParser*, DLTXSection*, DLTXSection*, int);
 
-static void _dltx_parser_apply_inheritance(DLTXParser *root, DLTXSection *result, const DLTXSection *base, const DLTXSection *over, const int depth) {
+static void _dltx_parser_apply_inheritance(DLTXParser *root, DLTXSection *result, const DLTXSection *base, const DLTXSection *over, const int depth)
+{
 	DLTXSection *temp;
 	DLTXSection *nbase, *nover;
 	char **inheritance = base->inheritance;
@@ -537,7 +573,8 @@ static void _dltx_parser_apply_inheritance(DLTXParser *root, DLTXSection *result
 	}
 }
 
-static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, DLTXSection *over, int depth) {
+static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection *base, DLTXSection *over, int depth)
+{
 	DLTXSection *result;
 
 	if (depth > 16) {
@@ -571,21 +608,25 @@ static DLTXSection *_dltx_parser_evaluate_section(DLTXParser *root, DLTXSection 
 	return result;
 }
 
-static void _dltx_parser_evaluate_all(DLTXParser *root) {
+static void _dltx_parser_evaluate_all(DLTXParser *root)
+{
 	int result;
 	DLTXSection *base, *over;
 	DLTXSection **base_cur;
 	DLTXSection **override_cur, **override_end;
 
-	base_cur = (DLTXSection**)root->bases->sections->arr;
+	base_cur = (DLTXSection **)root->bases->sections->arr;
 
-	override_cur = (DLTXSection**)root->overrides->sections->arr;
+	override_cur = (DLTXSection **)root->overrides->sections->arr;
 	override_end = override_cur + root->overrides->sections->size;
 
 	over = NULL;
-	for(base = *base_cur; base_cur < (DLTXSection**)(root->bases->sections->arr + root->bases->sections->size); base=*(++base_cur), over=NULL) {
+	for (
+		base = *base_cur; base_cur < (DLTXSection **)(root->bases->sections->arr + root->bases->sections->size);
+		base = *(++base_cur), over = NULL
+	) {
 		//find override
-		for (;override_cur < override_end;) {
+		for (; override_cur < override_end;) {
 			over = *override_cur;
 			result = strcmp(base->name, over->name);
 			if (result > 0) {
@@ -595,28 +636,26 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 				);
 				override_cur++;
 				continue;
-			} else if (result == 0) {
+			} else if (result == 0)
 				// Found it !
 				override_cur++;
-			} else {
+			else
 				over = NULL;
-			}
 			break;
 		}
 
-		if (! _dltx_parser_evaluate_section(root, base, over, 0))
+		if (!_dltx_parser_evaluate_section(root, base, over, 0))
 			return;
 
 		if (root->err != NO_ERROR)
 			return;
 	}
 
-	for (; override_cur < override_end; override_cur++) {
+	for (; override_cur < override_end; override_cur++)
 		root->on_error(root,
 			(root->output->flags & DLTX_STRICT) ? EVAL_MISSING_SECTION : NO_ERROR,
 			"Section [%s] don't override anything", (*override_cur)->name
 		);
-	}
 
 	// Apply resolution to output
 	dltx_sort(root->results);
@@ -639,7 +678,8 @@ static void _dltx_parser_evaluate_all(DLTXParser *root) {
 #endif
 }
 
-void _dltx_apply_overrides(DLTXParser *root) {
+void _dltx_apply_overrides(DLTXParser *root)
+{
 	// Apply safe overrides
 	dynarray_foreach(root->soverrides, (dynarray_cb)&_dltx_apply_soverrides_create_iterator, root);
 
@@ -652,7 +692,8 @@ void _dltx_apply_overrides(DLTXParser *root) {
 	_dltx_parser_evaluate_all(root);
 }
 
-static void _dltx_include_modfile(DLTXParser *root) {
+static void _dltx_include_modfile(DLTXParser *root)
+{
 	char *glob;
 
 	if (root->is_parsing_modfile)
@@ -668,18 +709,19 @@ static void _dltx_include_modfile(DLTXParser *root) {
 	root->is_parsing_modfile = false;
 }
 
-void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size) {
+void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_size)
+{
 	char *cur = buffer;
 	char *end = buffer + buff_size;
 	char *line = buffer;
 
-	while(cur < end) {
-		if(*cur == '\0') {
+	while (cur < end) {
+		if (*cur == '\0') {
 			root->on_new_line(root, line);
 			break;
 		}
 
-		switch(*cur) {
+		switch (*cur) {
 		case '-':
 			if (*(cur+1) != '-')
 				break;
@@ -704,21 +746,21 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 	_dltx_include_modfile(root);
 }
 
-DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[]) {
+DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[])
+{
 	char *buffer;
 	FILE *file = fopen(filename, "r");
 	DLTX_RETURN_CODE err;
 
-	if (file == NULL) {
+	if (file == NULL)
 		return FILE_READ_ERROR;
-	}
 
 	buffer = malloc(dltx_parser_buffer_size);
 
 	fread(buffer, dltx_parser_buffer_size-1, 1, file);
 	buffer[ftell(file)] = 0;
 
-	if(feof(file) == 0) {
+	if (feof(file) == 0) {
 		free(buffer);
 		fclose(file);
 		return FILE_TOO_BIG;
@@ -742,7 +784,8 @@ DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filenam
 }
 
 // Entrypoint
-DLTX_RETURN_CODE dltx_parser_parse_file(DLTX *dltx, const char filename[]) {
+DLTX_RETURN_CODE dltx_parser_parse_file(DLTX *dltx, const char filename[])
+{
 	DLTXParser *reader;
 	DLTX_RETURN_CODE err;
 
@@ -758,11 +801,13 @@ DLTX_RETURN_CODE dltx_parser_parse_file(DLTX *dltx, const char filename[]) {
 	return err;
 }
 
-void dltx_parser_on_include_noop(DLTXParser *root, char path[]) {
+void dltx_parser_on_include_noop(DLTXParser *root, char path[])
+{
 	root->on_error(root, FILE_READ_ERROR, "Inclusion from raw buffer are not yet supported");
 }
 
-DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buffer_size) {
+DLTX_RETURN_CODE dltx_parser_parse_buffer(DLTX *dltx, char buffer[], size_t buffer_size)
+{
 	DLTX_RETURN_CODE err;
 	DLTXParser *reader;
 

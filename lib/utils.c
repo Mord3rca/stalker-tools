@@ -4,25 +4,30 @@
 
 #include "dynarray.h"
 
-static char* _rstrip(char *s) {
+static char *_rstrip(char *s)
+{
 	char *cur, *end;
 	size_t l = strlen(s);
 
-	for(cur = s, end = s + l; cur < end && isspace(*cur); *(cur++) = 0);
+	for (cur = s, end = s + l; cur < end && isspace(*cur); *(cur++) = 0)
+		;
 
 	return cur != end ? cur : NULL;
 }
 
-static char *_lstrip(char *s) {
+static char *_lstrip(char *s)
+{
 	char *cur, *end;
 	size_t l = strlen(s) - 1;
 
-	for(cur = s + l, end = s; cur > end && isspace(*cur); *(cur--) = 0);
+	for (cur = s + l, end = s; cur > end && isspace(*cur); *(cur--) = 0)
+		;
 
 	return cur != end ? s : NULL;
 }
 
-char *strip(char *s) {
+char *strip(char *s)
+{
 	s = _rstrip(s);
 	if (s)
 		_lstrip(s);
@@ -30,7 +35,8 @@ char *strip(char *s) {
 	return s;
 }
 
-char **split(char *str, const char *delims, size_t *size) {
+char **split(char *str, const char *delims, size_t *size)
+{
 	char *s, *t;
 	char **result;
 	struct dynarray *dyn = dynarray_create(16);
@@ -43,7 +49,7 @@ char **split(char *str, const char *delims, size_t *size) {
 		dynarray_insert(dyn, t);
 	}
 
-	result = (char**)dyn->arr;
+	result = (char **)dyn->arr;
 	dyn->arr = NULL;
 	if (size)
 		*size = dyn->size - 1;
@@ -52,6 +58,7 @@ char **split(char *str, const char *delims, size_t *size) {
 	return result;
 }
 
-bool parse_bool(const char *str) {
+bool parse_bool(const char *str)
+{
 	return strcmp(str, "true") == 0;
 }

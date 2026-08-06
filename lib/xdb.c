@@ -8,20 +8,23 @@
 
 // XDB CHUNK
 
-bool xdb_chunk_is_compressed(const xdb_chunk a) {
+bool xdb_chunk_is_compressed(const xdb_chunk a)
+{
 	return a.type & XDB_COMPRESS_FLAG;
 }
 
 // XDB METADATA ENTRY
 
-void free_xdb_metadata_entry(xdb_metadata_entry *e) {
+void free_xdb_metadata_entry(xdb_metadata_entry *e)
+{
 	free(e->path);
 	free(e);
 }
 
 // XDB ARCHIVE
 
-static int _xdb_read_chunk(xdb *archive) {
+static int _xdb_read_chunk(xdb *archive)
+{
 	size_t l;
 	long flen;
 	xdb_chunk *b;
@@ -35,10 +38,10 @@ static int _xdb_read_chunk(xdb *archive) {
 	flen = ftell(f);
 
 	fseek(f, 0, SEEK_SET);
-	for(l = 0; l < XDB_MAX_CHUNKS; l++) {
+	for (l = 0; l < XDB_MAX_CHUNKS; l++) {
 		b = archive->chunks + l;
 
-		if(fread(u.buff, 1, 8, f) != 8)
+		if (fread(u.buff, 1, 8, f) != 8)
 			return 1;
 
 		b->type = u.a.type;
@@ -54,8 +57,11 @@ static int _xdb_read_chunk(xdb *archive) {
 	return 0;
 }
 
-xdb *xdb_archive_open(const char path[PATH_MAX]) {
-	xdb *archive = malloc(sizeof(xdb));
+xdb *xdb_archive_open(const char path[PATH_MAX])
+{
+	xdb *archive;
+
+	archive = malloc(sizeof(xdb));
 	memset(archive, 0, sizeof(xdb));
 
 	archive->_f = fopen(path, "r");
@@ -73,8 +79,10 @@ xdb *xdb_archive_open(const char path[PATH_MAX]) {
 	return archive;
 }
 
-void xdb_archive_close(xdb *archive) {
-	if (!archive) return;
+void xdb_archive_close(xdb *archive)
+{
+	if (!archive)
+		return;
 
 	if (archive->_f)
 		fclose(archive->_f);
@@ -82,8 +90,10 @@ void xdb_archive_close(xdb *archive) {
 	free(archive);
 }
 
-const xdb_chunk *xdb_get_chunk(const xdb *x, unsigned long type) {
+const xdb_chunk *xdb_get_chunk(const xdb *x, unsigned long type)
+{
 	size_t i;
+
 	for (i = 0; i < XDB_MAX_CHUNKS; i++) {
 		if ((x->chunks[i].type & ~XDB_COMPRESS_FLAG) == type)
 			return x->chunks + i;
@@ -91,7 +101,8 @@ const xdb_chunk *xdb_get_chunk(const xdb *x, unsigned long type) {
 	return NULL;
 }
 
-unsigned char *xdb_get_chunk_data(const xdb *x, const xdb_chunk *c, size_t *size) {
+unsigned char *xdb_get_chunk_data(const xdb *x, const xdb_chunk *c, size_t *size)
+{
 	FILE *f = x->_f;
 	size_t decomp_size = -1;
 	unsigned char *decomp, *data;
@@ -102,7 +113,7 @@ unsigned char *xdb_get_chunk_data(const xdb *x, const xdb_chunk *c, size_t *size
 	fread(data, 1, c->size, f);
 
 	if (xdb_chunk_is_compressed(*c)) {
-		huffman_decompress((void**)&decomp, size ? size : &decomp_size, data, c->size);
+		huffman_decompress((void **)&decomp, size ? size : &decomp_size, data, c->size);
 		free(data);
 		return decomp;
 	}
@@ -112,7 +123,8 @@ unsigned char *xdb_get_chunk_data(const xdb *x, const xdb_chunk *c, size_t *size
 	return data;
 }
 
-DLTX *xdb_get_header(const xdb *x) {
+DLTX *xdb_get_header(const xdb *x)
+{
 	DLTX *d;
 	size_t data_s;
 	const xdb_chunk *c;
@@ -129,7 +141,7 @@ DLTX *xdb_get_header(const xdb *x) {
 		return NULL;
 	}
 
-	if (dltx_read_buffer(d, (char*)data, data_s) != NO_ERROR) {
+	if (dltx_read_buffer(d, (char *)data, data_s) != NO_ERROR) {
 		free(data);
 		free_dltx(d);
 		return NULL;
@@ -139,32 +151,36 @@ DLTX *xdb_get_header(const xdb *x) {
 	return d;
 }
 
-static unsigned short _read_ushort(unsigned char **cur) {
-	unsigned short *r = (unsigned short*)(*cur);
+static unsigned short _read_ushort(unsigned char **cur)
+{
+	unsigned short *r = (unsigned short *)(*cur);
 	*cur += sizeof(unsigned short);
 	return *r;
 }
 
-static uint32_t _read_uint32(unsigned char **cur) {
-	uint32_t *r = (uint32_t*)(*cur);
+static uint32_t _read_uint32(unsigned char **cur)
+{
+	uint32_t *r = (uint32_t *)(*cur);
 	*cur += sizeof(uint32_t);
 	return *r;
 }
 
-static char *_read_string(unsigned char **cur, size_t s) {
+static char *_read_string(unsigned char **cur, size_t s)
+{
 	char t, *e, *r;
 
-	e = (char*)(*cur + s);
+	e = (char *)(*cur + s);
 	t = *e;
 	*e = 0;
-	r = strdup((char*)*cur);
+	r = strdup((char *)*cur);
 	*e = t;
 
 	*cur += s;
 	return r;
 }
 
-struct dynarray *xdb_read_metadata(const xdb *x) {
+struct dynarray *xdb_read_metadata(const xdb *x)
+{
 	size_t dsize, tmp;
 	const xdb_chunk *c;
 	struct dynarray *r;
@@ -173,9 +189,8 @@ struct dynarray *xdb_read_metadata(const xdb *x) {
 	xdb_metadata_entry *entry;
 
 	c = xdb_get_chunk(x, XDB_METADATA);
-	if (!c) {
+	if (!c)
 		return NULL;
-	}
 
 	r = dynarray_create(32);
 
@@ -183,7 +198,7 @@ struct dynarray *xdb_read_metadata(const xdb *x) {
 	dend = dstart + dsize;
 
 	dcur = dstart;
-	while(dcur < dend) {
+	while (dcur < dend) {
 		esize = _read_ushort(&dcur);
 
 		if (esize < (sizeof(uint32_t) * 4))
@@ -208,7 +223,8 @@ struct dynarray *xdb_read_metadata(const xdb *x) {
 	return r;
 }
 
-void free_xdb_metadata(struct dynarray *entries) {
+void free_xdb_metadata(struct dynarray *entries)
+{
 	free_dynarray(entries, (dynarray_free_cb)&free_xdb_metadata_entry);
 }
 
@@ -221,19 +237,26 @@ typedef struct {
 	long foffset;
 } extract_all_args;
 
-static void _free_attrib(char **p) {
-	if (!p) return;
+static void _free_attrib(char **p)
+{
+	if (!p)
+		return;
+
 	free(*p);
 }
 
-static void _close_file(FILE **f) {
-	if (!f || !(*f)) return;
+static void _close_file(FILE **f)
+{
+	if (!f || !(*f))
+		return;
 
 	fclose(*f);
 }
 
-static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *args) {
+static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *args)
+{
 	size_t size, poffset = entry->ptr - args->foffset;
+
 	FILE *out __attribute__((cleanup(_close_file))) = NULL;
 	char *buffer __attribute__((cleanup(_free_attrib))) = NULL;
 
@@ -258,14 +281,13 @@ static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *a
 	if (entry->real_size != entry->comp_size) {
 		buffer = malloc(size);
 		// TODO: Better workaround (after huffman rewrite ?)
-		if (lzo1x_decompress((lzo_bytep)args->data + poffset, entry->comp_size, (lzo_bytep)buffer, &size, NULL) != 0 ) {
+		if (lzo1x_decompress((lzo_bytep)args->data + poffset, entry->comp_size, (lzo_bytep)buffer, &size, NULL) != 0) {
 			args->r = 1;
 			return false;
 		}
 
-		if (size != entry->real_size) {
+		if (size != entry->real_size)
 			fprintf(stderr, "SIZE MISMATCH FOR %s\n", entry->path);
-		}
 	}
 
 	// Check CRC
@@ -278,12 +300,13 @@ static bool _xdb_extract_iterator(xdb_metadata_entry *entry, extract_all_args *a
 		args->r = 1;
 		return false;
 	}
-	fwrite(buffer ? buffer : (char*)(args->data + poffset), size, 1, out);
+	fwrite(buffer ? buffer : (char *)(args->data + poffset), size, 1, out);
 
 	return args->r == 0;
 }
 
-int xdb_extract_all(xdb *archive, const char path[]) {
+int xdb_extract_all(xdb *archive, const char path[])
+{
 	extract_all_args args;
 	const xdb_chunk *cdata;
 	struct dynarray *metadata;
@@ -314,7 +337,8 @@ int xdb_extract_all(xdb *archive, const char path[]) {
 	return args.r;
 }
 
-unsigned char *xdb_archive_get_member_data(const xdb *archive, const char member[], size_t *buffsize) {
+unsigned char *xdb_archive_get_member_data(const xdb *archive, const char member[], size_t *buffsize)
+{
 	size_t bsize, poffset;
 	unsigned char *data;
 	unsigned char *buff;
@@ -350,11 +374,10 @@ unsigned char *xdb_archive_get_member_data(const xdb *archive, const char member
 
 	poffset = entry->ptr - cdata->fpos;
 
-	if (entry->real_size != entry->comp_size) {
+	if (entry->real_size != entry->comp_size)
 		lzo1x_decompress((lzo_bytep)data + poffset, entry->comp_size, (lzo_bytep)buff, &bsize, NULL);
-	} else {
+	else
 		memcpy(buff, data + poffset, bsize);
-	}
 
 	if (buffsize)
 		*buffsize = bsize;
