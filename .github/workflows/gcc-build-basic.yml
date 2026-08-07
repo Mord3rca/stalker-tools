@@ -12,7 +12,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install deps
-        run: sudo apt install cmake libcunit1-dev libfuse3-dev liblzo2-dev valgrind
+        run: |
+          sudo apt update
+          sudo apt install cmake libcunit1-dev libfuse3-dev liblzo2-dev valgrind
       - name: Building
         run: cmake -B out/ -DENABLE_TESTS=ON -DENABLE_DLTX_TRACE=ON && cmake --build out/
       - name: Testing
