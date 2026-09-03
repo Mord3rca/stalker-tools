@@ -165,18 +165,20 @@ static uint32_t _read_uint32(unsigned char **cur)
 	return *r;
 }
 
-static char *_read_string(unsigned char **cur, size_t s)
+static char *_read_path(unsigned char **cur, size_t s)
 {
-	char t, *e, *r;
+	char t, *e;
+	stcore_filesystem_path p;
 
 	e = (char *)(*cur + s);
 	t = *e;
 	*e = 0;
-	r = strdup((char *)*cur);
+	stcore_filesystem_path_init(&p, (char *)*cur);
+	stcore_filesystem_path_to_system(&p);
 	*e = t;
 
 	*cur += s;
-	return r;
+	return strdup(p.target);
 }
 
 struct dynarray *xdb_read_metadata(const xdb *x)
@@ -211,8 +213,7 @@ struct dynarray *xdb_read_metadata(const xdb *x)
 		entry->crc       = _read_uint32(&dcur);
 
 		tmp = esize - sizeof(uint32_t)*4;
-		entry->path = _read_string(&dcur, tmp);
-		filesystem_to_system_path(entry->path);
+		entry->path = _read_path(&dcur, tmp);
 
 		entry->ptr = _read_uint32(&dcur);
 
