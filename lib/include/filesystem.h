@@ -2,6 +2,7 @@
 #define _FILESSYTEM_HEADER
 
 #include "dynarray.h"
+#include "filesystem_path.h"
 
 typedef enum {
 	FS_NO_ERROR = 0,
@@ -14,17 +15,7 @@ typedef enum {
 int  filesystem_init(const char fsgame[]);
 void filesystem_cleanup(void);
 
-char *filesystem_path_append(const char p1[], const char p2[]);
-char *filesystem_path_append2(const char path[], const char file[]);
-
-fs_return_code filesystem_glob(const char path[], const char relative[], char **out[]);
-char *filesystem_get_modfile_glob_path(const char path[]);
-void filesystem_path_tolower(char path[]);
-
-void filesystem_to_system_path(char path[]);
-
-char *filesystem_canonicalize_path(const char path[]);
-char *filesystem_canonicalize_directory(const char dir[]);
+fs_return_code filesystem_glob(const char path[], const char relative[], char **paths[]);
 
 int filesystem_create_directory(const char dir[]);
 int filesystem_create_subdir(const char file[]);

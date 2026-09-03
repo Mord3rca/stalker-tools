@@ -48,17 +48,18 @@ static const struct filesystem_path_key *_filesystem_get_key(const char key[])
 
 static struct filesystem_path_key *_create_fs_root(const char fsgame[])
 {
-	char buffer[PATH_MAX + 1] = {0};
+	stcore_filesystem_path buff;
 	struct filesystem_path_key *r = NULL;
 
-	strncpy(buffer, fsgame, PATH_MAX);
-	dirname(buffer);
-	strcat(buffer, "/");
+
+	stcore_filesystem_path_init(&buff, fsgame);
+	stcore_filesystem_path_dirname(&buff);
+	stcore_filesystem_path_canonicalize(&buff);
 
 	r = malloc(sizeof(struct filesystem_path_key));
 	r->key = strdup("$fs_root$");
 	r->key_size = strlen(r->key);
-	r->value = strdup(buffer);
+	r->value = *buff.target ? strdup(buff.target) : strdup(".");
 	r->flags = 0;
 
 	return r;
@@ -66,31 +67,30 @@ static struct filesystem_path_key *_create_fs_root(const char fsgame[])
 
 static struct filesystem_path_key *_create_fs_key(const char name[], const char root[], const char add[], unsigned char flags)
 {
-	char buffer[PATH_MAX + 1] = {0};
+	stcore_filesystem_path buffer;
 	struct filesystem_path_key *r = NULL;
 	const struct filesystem_path_key *rkey = NULL;
+
+	stcore_filesystem_path_init(&buffer, "");
 
 	if (root) {
 		rkey = _filesystem_get_key(root);
 		if (!rkey)
 			goto create_fs_end;
 
-		strcat(buffer, rkey->value);
+		stcore_filesystem_path_append_str(&buffer, rkey->value);
 	}
 
-	if (add) {
-		if (*buffer && buffer[strlen(buffer) - 1] != '/')
-			strcat(buffer, "/");
+	if (add)
+		stcore_filesystem_path_append_str(&buffer, add);
 
-		strcat(buffer, add);
-	}
-
-	filesystem_to_system_path(buffer);
+	stcore_filesystem_path_to_system(&buffer);
+	stcore_filesystem_path_canonicalize(&buffer);
 
 	r = malloc(sizeof(struct filesystem_path_key));
 	r->key = strdup(name);
 	r->key_size = strlen(r->key);  // Will be used for quick matching
-	r->value = strdup(buffer);
+	r->value = strdup(buffer.target);
 	r->flags = flags;
 
 create_fs_end:
@@ -164,69 +164,6 @@ void filesystem_cleanup(void)
 	free_dynarray(_fs.keys, (dynarray_free_cb)&_fs_free_key);
 }
 
-void filesystem_to_system_path(char path[])
-{
-	char *cur = path;
-
-	if (!cur)
-		return;
-
-	while (*cur != 0) {
-		if (*cur == '\\')
-			*cur = '/';
-		cur++;
-	}
-}
-
-void filesystem_path_tolower(char path[])
-{
-	char *cur = path;
-
-	if (!cur)
-		return;
-
-	while (*cur != 0) {
-		*cur = tolower(*cur);
-		cur++;
-	}
-}
-
-char *filesystem_path_append(const char p1[], const char p2[])
-{
-	char *c;
-	char r[PATH_MAX + 1] = {0};
-
-	c = stpcpy(r, p1);
-	if (*(c - 1) != '/')
-		*(c++) = '/';
-
-	stpcpy(c, p2);
-
-	return strdup(r);
-}
-
-// TODO: Better name
-char *filesystem_path_append2(const char path[], const char file[])
-{
-	size_t l;
-	char *d, p[PATH_MAX + 1];
-
-	strncpy(p, path, PATH_MAX);
-	dirname(p);
-	l = strlen(p);
-	for (d = p+l+1; *d; d++)
-		*d = 0;
-
-	*(p + l++) = '/';
-
-	strcat(p + l, file);
-
-	filesystem_to_system_path(p);
-
-	return strdup(p);
-}
-
-
 fs_return_code filesystem_glob(const char path[], const char relative[], char **out[])
 {
 	int err;
@@ -260,27 +197,7 @@ fs_return_code filesystem_glob(const char path[], const char relative[], char **
 	return FS_NO_ERROR;
 }
 
-char *filesystem_get_modfile_glob_path(const char path[])
-{
-	char *buffer;
-	char *filename, *temp;
-
-	buffer = strdup(path);
-	filename = basename(buffer);
-
-	temp = strstr(filename, ".ltx");
-	if (temp)
-		*temp = 0;
-
-	temp = calloc(PATH_MAX, sizeof(char));
-
-	snprintf(temp, PATH_MAX, "mod_%s_*.ltx", filename);
-
-	free(buffer);
-	return temp;
-}
-
-char *filesystem_canonicalize_directory(const char dir[])
+static char *filesystem_canonicalize_directory(const char dir[])
 {
 	char *cdir = NULL;
 	size_t sdir = strlen(dir);
@@ -298,35 +215,6 @@ char *filesystem_canonicalize_directory(const char dir[])
 	cdir[sdir++] = 0;
 
 	return cdir;
-}
-
-char *filesystem_canonicalize_path(const char path[])
-{
-	char *it;
-	const char *pcur, *pend;
-	char buffer[PATH_MAX + 1] = {0};
-
-	it = buffer;
-	pcur = path;
-	pend = path + strlen(path);
-
-	while (pcur < pend) {
-		switch (*pcur) {
-		case '.':
-			if (*(pcur+1) == '/')
-				pcur++;
-			else
-				*(it++) = '.';
-			break;
-		case '\\':
-			*(it++) = '/';
-			break;
-		default:
-			*(it++) = *pcur;
-		}
-		pcur++;
-	}
-	return strdup(buffer);
 }
 
 int filesystem_create_directory(const char dir[])
@@ -423,7 +311,7 @@ static int _fs_filter_dot_dir(const struct dirent *d)
 static int _fs_read_directory_content(struct dynarray *dyn, const char path[], int depth, int mdepth)
 {
 	int l, r = 0;
-	char *npath;
+	stcore_filesystem_path npath;
 	struct dirent **files, **it, **itend;
 
 	if (mdepth != -1 && depth >= mdepth)
@@ -436,15 +324,16 @@ static int _fs_read_directory_content(struct dynarray *dyn, const char path[], i
 	}
 
 	for (it = files, itend = files + l; it < itend; it++) {
+		stcore_filesystem_path_init(&npath, path);
+		stcore_filesystem_path_append_str(&npath, (*it)->d_name);
+		stcore_filesystem_path_canonicalize(&npath);
+
 		if ((*it)->d_type != DT_DIR) {
-			dynarray_insert(dyn, filesystem_path_append(path, (*it)->d_name));
+			dynarray_insert(dyn, strdup(npath.target));
 			continue;
 		}
 
-		npath = filesystem_path_append(path, (*it)->d_name);
-		r = _fs_read_directory_content(dyn, npath, depth + 1, mdepth);
-
-		free(npath);
+		r = _fs_read_directory_content(dyn, npath.target, depth + 1, mdepth);
 
 		if (r != 0)
 			break;
