@@ -279,17 +279,17 @@ void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[])
 void dltx_parser_default_on_include_directive(DLTXParser *root, char path[])
 {
 	DLTX_RETURN_CODE err;
-	char *from = root->cur_file_path;
-	char *to = filesystem_path_append2(from, path);
+	stcore_filesystem_path to;
 	size_t sline = root->cur_line;
+	char *from = root->cur_file_path;
 
-	err = dltx_parser_process_file(root, to);
+	stcore_filesystem_path_append2(&to, from, path);
+
+	err = dltx_parser_process_file(root, to.target);
 	if (err != NO_ERROR)
-		root->on_error(root, FILE_READ_ERROR, "IO error while processing %s", to);
+		root->on_error(root, FILE_READ_ERROR, "IO error while processing %s", to.target);
 #ifdef DLTX_TRACE
-	dynarray_insert(root->bases->files, to);
-#else
-	free(to);
+	dynarray_insert(root->bases->files, strdup(to.target));
 #endif
 	root->cur_file_path = from;
 	root->cur_line = sline;
@@ -299,13 +299,14 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 {
 	fs_return_code err;
 	char **paths = NULL;
-	char *to = filesystem_path_append2(root->cur_file_path, path);
+	stcore_filesystem_path to;
 
-	err = filesystem_glob(to, root->cur_file_path, &paths);
+	stcore_filesystem_path_append2(&to, root->cur_file_path, path);
+
+	err = filesystem_glob(to.target, root->cur_file_path, &paths);
 	if (err != FS_NO_ERROR) {
 		if (err != FS_GLOB_NO_MATCH && !root->is_parsing_modfile)
-			root->on_error(root, FILE_READ_ERROR, "Error while globbing %s", to);
-		free(to);
+			root->on_error(root, FILE_READ_ERROR, "Error while globbing %s", to.target);
 		return;
 	}
 
@@ -313,7 +314,6 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 		root->on_include_directive(root, paths[i]);
 		free(paths[i]);
 	}
-	free(to);
 	free(paths);
 }
 
@@ -347,7 +347,7 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line)
 	// Start with a # so probably a header
 	if (line[0] == '#' && regexec(&dltx_include_regex, line, max_group, pmatch, 0) == 0) {
 		line[pmatch[1].rm_eo] = 0;
-		filesystem_path_tolower(line + pmatch[1].rm_so);
+		//filesystem_path_tolower(line + pmatch[1].rm_so);
 		if (_is_globbing(line + pmatch[1].rm_so))
 			root->on_glob_include_directive(root, line + pmatch[1].rm_so);
 		else
@@ -692,6 +692,23 @@ void _dltx_apply_overrides(DLTXParser *root)
 	_dltx_parser_evaluate_all(root);
 }
 
+static char *get_modfile_glob_path(const char path[])
+{
+	stcore_filesystem_path base;
+	char *temp, buffer[PATH_MAX + 64] = {0};
+
+	stcore_filesystem_path_init(&base, path);
+	stcore_filesystem_path_basename(&base);
+
+	temp = strstr(base.target, ".ltx");
+	if (temp)
+		*temp = 0;
+
+	snprintf(buffer, PATH_MAX + 64, "mod_%s_*.ltx", base.target);
+
+	return strdup(buffer);
+}
+
 static void _dltx_include_modfile(DLTXParser *root)
 {
 	char *glob;
@@ -701,7 +718,7 @@ static void _dltx_include_modfile(DLTXParser *root)
 
 	root->is_parsing_modfile = true;
 
-	glob = filesystem_get_modfile_glob_path(root->cur_file_path);
+	glob = get_modfile_glob_path(root->cur_file_path);
 
 	root->on_glob_include_directive(root, glob);
 
