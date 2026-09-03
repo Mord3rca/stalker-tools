@@ -110,10 +110,10 @@ static stfs_item *stfs_item_create_link(const char name[])
 	item->type = STFS_ITEM_LINK;
 
 	stcore_filesystem_path_init(&(item->fs_path), name);
-	stcore_filesystem_path_prepend(root_path, &(item->fs_path));
+	stcore_filesystem_path_prepend(&(item->fs_path), root_path);
 
 	item->arg.link = stcore_filesystem_path_create(dltx_section_get_key(stfs_cfg, "wdir")->value);
-	stcore_filesystem_path_append(item->fs_path, item->arg.link);
+	stcore_filesystem_path_append(item->arg.link, item->fs_path);
 
 	for (char *i = item->fs_path.target; *i; i++)
 		*i = tolower(*i);
@@ -177,7 +177,7 @@ static stfs_item *stfs_item_create_xdb_handler(const char name[], const char xdb
 	item->type = STFS_ITEM_XDB_MEMBER;
 
 	stcore_filesystem_path_init(&(item->fs_path), name);
-	stcore_filesystem_path_prepend(root_path, &(item->fs_path));
+	stcore_filesystem_path_prepend(&(item->fs_path), root_path);
 
 	uri = strdup(xdb_uri);
 	elements[0] = uri;
@@ -225,7 +225,7 @@ static stfs_item *stfs_item_create_dir(const stcore_filesystem_path p)
 	stfs_item *i = malloc(sizeof(stfs_item));
 
 	i->type = STFS_ITEM_DIR;
-	stcore_filesystem_path_copy(p, &(i->fs_path));
+	stcore_filesystem_path_copy(&(i->fs_path), p);
 	i->arg.dir_list = dynarray_create(24);
 
 	for (char *j = i->fs_path.target; *j; j++)
@@ -278,7 +278,8 @@ static inline bool _non_ascii_path(const char path[])
 static void _register_db_elements(xdb *f, DLTX *header)
 {
 	struct dynarray *metadata;
-	char *tmp, *fpath, *cpath, *rpath, buffer[PATH_MAX * 2];
+	char buffer[PATH_MAX * 2];
+	stcore_filesystem_path rpath, fpath, wpath;
 
 	metadata = xdb_read_metadata(f);
 	if (!metadata)
@@ -286,11 +287,9 @@ static void _register_db_elements(xdb *f, DLTX *header)
 
 	// TODO: Better FS lib for transparency resolve
 	//rpath = filesystem_resolve_path(dltx_get_key(header, "header", "entry_point"));
-	rpath = strdup("gamedata/"); // All of them are writting to gamedata/
-	if (!rpath)
-		return;
+	stcore_filesystem_path_init(&rpath, "gamedata"); // All of them are writting to gamedata/
 
-	fpath = filesystem_canonicalize_path(f->path);
+	stcore_filesystem_path_init(&fpath, f->path);
 
 	DYNARRAY_INLINE_FOREACH(metadata, const xdb_metadata_entry) {
 		if (XDB_METADATA_ENTRY_IS_DIR((*it)))
@@ -302,18 +301,13 @@ static void _register_db_elements(xdb *f, DLTX *header)
 			continue;
 		}
 
-		tmp = filesystem_path_append(rpath, (*it)->path);
-		cpath = filesystem_canonicalize_path(tmp);
-		snprintf(buffer, PATH_MAX * 2, "xdb://%s:%s:%" PRIu32, fpath, (*it)->path, (*it)->real_size);
+		stcore_filesystem_path_copy(&wpath, rpath);
+		stcore_filesystem_path_append_str(&wpath, (*it)->path);
+		snprintf(buffer, PATH_MAX * 2, "xdb://%s:%s:%" PRIu32, f->path, (*it)->path, (*it)->real_size);
 
-		dltx_section_set_key(stfs_map, cpath, buffer);
-
-		free(tmp);
-		free(cpath);
+		dltx_section_set_key(stfs_map, wpath.target, buffer);
 	}
 
-	free(rpath);
-	free(fpath);
 	free_xdb_metadata(metadata);
 }
 
@@ -323,7 +317,7 @@ static int parse_db_overrides(void)
 	xdb *file;
 	const char *v;
 	DLTX *header = NULL;
-	char *t, *datapath = filesystem_resolve_path("$arch_dir$");
+	char *datapath = filesystem_resolve_path("$arch_dir$");
 
 	dbs = filesystem_list_files(datapath, -1);
 	if (!dbs) {
@@ -344,9 +338,7 @@ static int parse_db_overrides(void)
 
 		v = dltx_get_key(header, "header", "auto_load");
 		if (v && strcmp(v, "true") == 0) {
-			t = filesystem_canonicalize_path(*it);
-			dltx_section_set_key(stfs_db_preload, t, NULL);
-			free(t);
+			dltx_section_set_key(stfs_db_preload, *it, NULL);
 			_register_db_elements(file, header);
 		}
 
@@ -361,16 +353,13 @@ static int parse_db_overrides(void)
 
 static int parse_cur_fs(void)
 {
-	char *t;
 	struct dynarray *files = filesystem_list_files(".", -1);
 
 	if (!files)
 		return 1;
 
 	DYNARRAY_INLINE_FOREACH(files, const char) {
-		t = filesystem_canonicalize_path(*it);
-		dltx_section_set_key(stfs_map, t, NULL);
-		free(t);
+		dltx_section_set_key(stfs_map, *it, NULL);
 	}
 
 	free_dynarray(files, &free);
@@ -456,7 +445,8 @@ static int stfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	filler(buf, ".", NULL, 0, FUSE_FILL_DIR_DEFAULTS);
 	filler(buf, "..", NULL, 0, FUSE_FILL_DIR_DEFAULTS);
 	DYNARRAY_INLINE_FOREACH(root->arg.dir_list, stfs_item) {
-		stcore_filesystem_path_basename((*it)->fs_path, &base);
+		stcore_filesystem_path_copy(&base, (*it)->fs_path);
+		stcore_filesystem_path_basename(&base);
 		filler(buf, base.target, NULL, 0, FUSE_FILL_DIR_DEFAULTS);
 	}
 
@@ -611,13 +601,13 @@ static DLTX *stfs_create_config(const char cache[])
 static stfs_item *stfs_create_dir_if_dont_exist(const stcore_filesystem_path p)
 {
 	stfs_item *i, *j;
-	stcore_filesystem_path dir, pabs;
+	stcore_filesystem_path dir;
 
 	if (stcore_filesystem_path_is_absolute(p)) {
-		stcore_filesystem_path_copy(p, &dir);
+		stcore_filesystem_path_copy(&dir, p);
 	} else {
 		stcore_filesystem_path_init(&dir, "/");
-		stcore_filesystem_path_append(p, &dir);
+		stcore_filesystem_path_append(&dir, p);
 	}
 
 	DYNARRAY_INLINE_FOREACH(fs_dirs, stfs_item) {
@@ -626,10 +616,9 @@ static stfs_item *stfs_create_dir_if_dont_exist(const stcore_filesystem_path p)
 	}
 
 	i = stfs_item_create_dir(dir);
+	stcore_filesystem_path_dirname(&dir);
 
-	stcore_filesystem_path_dirname(dir, &pabs);
-
-	j = stfs_create_dir_if_dont_exist(pabs);
+	j = stfs_create_dir_if_dont_exist(dir);
 	dynarray_insert(j->arg.dir_list, i);
 
 	return i;
@@ -656,7 +645,8 @@ static void stfs_create_fs_structure(DLTX *config)
 	DYNARRAY_INLINE_FOREACH(mapping->keys, const DLTXKey) {
 		item = stfs_item_create((*it)->name, (*it)->value);
 
-		stcore_filesystem_path_dirname(item->fs_path, &dirname);
+		stcore_filesystem_path_copy(&dirname, item->fs_path);
+		stcore_filesystem_path_dirname(&dirname);
 		dir = stfs_create_dir_if_dont_exist(dirname);
 		if (!dir)
 			continue;
