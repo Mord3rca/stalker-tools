@@ -15,7 +15,7 @@ typedef enum {
 int  filesystem_init(const char fsgame[]);
 void filesystem_cleanup(void);
 
-fs_return_code filesystem_glob(const char path[], const char relative[], char **paths[]);
+struct dynarray *filesystem_glob(const char path[], const char relative[]);
 
 int filesystem_create_directory(const char dir[]);
 int filesystem_create_subdir(const char file[]);

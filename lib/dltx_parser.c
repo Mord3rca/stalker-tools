@@ -297,24 +297,22 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[])
 
 void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[])
 {
-	fs_return_code err;
-	char **paths = NULL;
+	struct dynarray *paths;
 	stcore_filesystem_path to;
 
 	stcore_filesystem_path_append2(&to, root->cur_file_path, path);
 
-	err = filesystem_glob(to.target, root->cur_file_path, &paths);
-	if (err != FS_NO_ERROR) {
-		if (err != FS_GLOB_NO_MATCH && !root->is_parsing_modfile)
+	paths = filesystem_glob(to.target, root->cur_file_path);
+	if (!paths) {
+		if (!root->is_parsing_modfile)
 			root->on_error(root, FILE_READ_ERROR, "Error while globbing %s", to.target);
 		return;
 	}
 
-	for (size_t i = 0; paths[i]; i++) {
-		root->on_include_directive(root, paths[i]);
-		free(paths[i]);
+	DYNARRAY_INLINE_FOREACH(paths, char) {
+		root->on_include_directive(root, *it);
 	}
-	free(paths);
+	free_dynarray(paths, &free);
 }
 
 static bool _is_globbing(const char path[])
