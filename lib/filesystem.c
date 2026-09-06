@@ -12,6 +12,7 @@
 
 #include "dltx.h"
 #include "filesystem.h"
+#include "sterr.h"
 #include "utils.h"
 
 struct filesystem_path_key {
@@ -164,37 +165,35 @@ void filesystem_cleanup(void)
 	free_dynarray(_fs.keys, (dynarray_free_cb)&_fs_free_key);
 }
 
-fs_return_code filesystem_glob(const char path[], const char relative[], char **out[])
+struct dynarray *filesystem_glob(const char path[], const char relative[])
 {
 	int err;
-	char *tmp;
 	glob_t gl;
 	size_t offset = 0;
-	char **result = NULL;
+	stcore_filesystem_path tmp;
+	struct dynarray *result = NULL;
 
 	if (relative) {
-		tmp = strdup(relative);
-		dirname(tmp);
-		offset = strlen(tmp) + 1;
-		free(tmp);
+		stcore_filesystem_path_init(&tmp, relative);
+		stcore_filesystem_path_dirname(&tmp);
+		offset = tmp.len + 1;
 	}
 
 	err = glob(path, 0, NULL, &gl);
 	if (err != 0) {
-		//free
-		return err == GLOB_NOMATCH ? FS_GLOB_NO_MATCH : FS_GLOB_ERROR;
+		if (err != GLOB_NOMATCH) {
+			sterr = ST_FS_GLOB_ERR;
+			return NULL;  // Something went wrong with glob(), indicate it by returning NULL
+		}
+		return dynarray_create(1);  // Return an empty array of max size 1
 	}
 
-	result = calloc(gl.gl_pathc + 1, sizeof(char *));
-	result[gl.gl_pathc] = NULL;
-
+	result = dynarray_create(gl.gl_pathc + 1);
 	for (size_t j = 0; j < gl.gl_pathc; j++)
-		result[j] = strdup(gl.gl_pathv[j] + offset);
-
-	*out = result;
+		dynarray_insert(result, strdup(gl.gl_pathv[j] + offset));
 
 	globfree(&gl);
-	return FS_NO_ERROR;
+	return result;
 }
 
 static char *filesystem_canonicalize_directory(const char dir[])
