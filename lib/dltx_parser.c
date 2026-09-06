@@ -5,14 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "dltx_parser.h"
 #include "dynarray.h"
 #include "filesystem.h"
 #include "utils.h"
 
-const size_t dltx_parser_buffer_size = 256*1024;
-const size_t dltx_parser_max_inheritence = 16;
+static const size_t dltx_parser_max_inheritence = 16;
 
 static const char _orphan_section_name[] = "__default__";
 
@@ -89,6 +89,7 @@ struct _DLTXParser_s {
 	DLTXSection *cur_section;
 
 	struct dynarray *soverrides;
+	struct dynarray *fbuffs;
 
 	size_t cur_line;
 	char *cur_file_path;
@@ -412,6 +413,7 @@ DLTXParser *dltx_create_parser(void)
 	e->deletions = dltx_create();
 
 	e->soverrides = dynarray_create(32);
+	e->fbuffs = dynarray_create(8);
 
 	e->err = NO_ERROR;
 
@@ -436,6 +438,7 @@ void free_dltx_parser(DLTXParser *e)
 	free_dltx(e->overrides);
 	free_dltx(e->deletions);
 	free_dynarray(e->soverrides, NULL);
+	free_dynarray(e->fbuffs, &free);
 	free(e);
 }
 
@@ -764,23 +767,27 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[])
 {
 	char *buffer;
+	struct stat statbuf = {0};
 	FILE *file = fopen(filename, "r");
-	DLTX_RETURN_CODE err;
 
 	if (file == NULL)
 		return FILE_READ_ERROR;
 
-	buffer = malloc(dltx_parser_buffer_size);
+	fstat(fileno(file), &statbuf);
 
-	fread(buffer, dltx_parser_buffer_size-1, 1, file);
-	buffer[ftell(file)] = 0;
+	buffer = malloc(statbuf.st_size + 1);
 
-	if (feof(file) == 0) {
+	fread(buffer, statbuf.st_size, 1, file);
+	buffer[statbuf.st_size] = 0;
+
+	if (feof(file) != 0) {
 		free(buffer);
 		fclose(file);
 		return FILE_TOO_BIG;
 	}
 	fclose(file);
+
+	dynarray_insert(reader->fbuffs, buffer);
 
 	reader->cur_file_path = strdup(filename);
 	reader->cur_line = 1;
@@ -788,14 +795,12 @@ DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filenam
 	dynarray_insert(reader->results->files, reader->cur_file_path);
 #endif
 	// Processing loop
-	_dltx_parser_process_buffer(reader, buffer, dltx_parser_buffer_size);
-	err = reader->err;
+	_dltx_parser_process_buffer(reader, buffer, statbuf.st_size);
 
-	free(buffer);
 #ifndef DLTX_TRACE
 	free(reader->cur_file_path);
 #endif
-	return err;
+	return reader->err;
 }
 
 // Entrypoint
