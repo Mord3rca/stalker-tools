@@ -31,6 +31,17 @@ void free_dynarray(struct dynarray *o, dynarray_free_cb free_item)
 	free(o);
 }
 
+int dynarray_reserve(struct dynarray *array, size_t nsize)
+{
+	if (nsize < array->max_size)
+		return -1;
+
+	array->arr = reallocarray(array->arr, array->size, nsize);
+	array->max_size = nsize;
+
+	return 0;
+}
+
 void dynarray_foreach(struct dynarray *array, dynarray_cb callback, void *data)
 {
 	void **cur, **end;
@@ -43,13 +54,9 @@ void dynarray_foreach(struct dynarray *array, dynarray_cb callback, void *data)
 
 int dynarray_insert(struct dynarray *array, void *obj)
 {
-	size_t nsize;
-
-	if (array->size >= array->max_size) {
-		nsize = array->max_size + 64;
-		array->arr = reallocarray(array->arr, array->size, nsize);
-		array->max_size = nsize;
-	}
+	if (array->size >= array->max_size)
+		if (dynarray_reserve(array, array->max_size + 64) < 0)
+			return -1;
 
 	array->arr[array->size++] = obj;
 	return 0;
