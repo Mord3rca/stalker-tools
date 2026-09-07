@@ -79,6 +79,8 @@ void dltx_key_update(DLTXKey *dest, const DLTXKey *src);
 DLTXSection *dltx_create_section(const char name[]);
 void free_dltx_section(DLTXSection *s);
 
+DLTXSection *dltx_section_copy(DLTXSection *s);
+
 DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[]);
 DLTX_RETURN_CODE dltx_section_set_key(DLTXSection *sec, const char key[], const char value[]);
 DLTX_RETURN_CODE dltx_section_del_key(DLTXSection *sec, const char key[]);
@@ -113,6 +115,8 @@ void dltx_set_readonly(DLTX *root, bool ro);
 void dltx_set_strict_mode(DLTX *root, bool strict);
 
 void dltx_sort(DLTX *root);
+
+DLTX *dltx_copy(DLTX *root);
 
 int dltx_save_to_file(DLTX *root, FILE *out);
 
