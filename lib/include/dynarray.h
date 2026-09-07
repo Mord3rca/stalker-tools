@@ -18,6 +18,8 @@ typedef void (*dynarray_free_cb)(void *);
 struct dynarray *dynarray_create(int size);
 void free_dynarray(struct dynarray *array, dynarray_free_cb free_item);
 
+int dynarray_reserve(struct dynarray *array, size_t nsize);
+
 // Iterator
 void dynarray_foreach(struct dynarray *array, dynarray_cb callback, void *data);
 
