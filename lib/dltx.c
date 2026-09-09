@@ -156,7 +156,7 @@ void free_dltx_section(DLTXSection *s)
 		free(s->inheritance);
 	}
 
-	free_dynarray(s->keys, (dynarray_free_cb)&free_dltx_key);
+	dynarray_free(s->keys, (dynarray_free_cb)&free_dltx_key);
 	free(s);
 }
 
@@ -221,7 +221,7 @@ DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection *sec)
 	if (sec->keys->size == 0)
 		return NO_ERROR;
 
-	free_dynarray(sec->keys, (void (*)(void *))&free_dltx_key);
+	dynarray_free(sec->keys, (void (*)(void *))&free_dltx_key);
 	sec->keys = dynarray_create(1);
 
 	return NO_ERROR;
@@ -314,9 +314,9 @@ DLTX *dltx_create(void)
 
 void free_dltx(DLTX *l)
 {
-	free_dynarray(l->sections, (dynarray_free_cb)&free_dltx_section);
+	dynarray_free(l->sections, (dynarray_free_cb)&free_dltx_section);
 #ifdef DLTX_TRACE
-	free_dynarray(l->files, &free);
+	dynarray_free(l->files, &free);
 #endif
 	free(l);
 }

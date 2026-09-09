@@ -162,7 +162,7 @@ static void _fs_free_key(struct filesystem_path_key *k)
 __attribute__((destructor))
 void filesystem_cleanup(void)
 {
-	free_dynarray(_fs.keys, (dynarray_free_cb)&_fs_free_key);
+	dynarray_free(_fs.keys, (dynarray_free_cb)&_fs_free_key);
 }
 
 struct dynarray *filesystem_glob(const char path[], const char relative[])
@@ -349,7 +349,7 @@ struct dynarray *filesystem_list_files(const char path[], int mdepth)
 	struct dynarray *dyn = dynarray_create(24);
 
 	if (_fs_read_directory_content(dyn, path, 0, mdepth) != 0) {
-		free_dynarray(dyn, (dynarray_free_cb)&free);
+		dynarray_free(dyn, (dynarray_free_cb)&free);
 		return NULL;
 	}
 

@@ -226,7 +226,7 @@ struct dynarray *xdb_read_metadata(const xdb *x)
 
 void free_xdb_metadata(struct dynarray *entries)
 {
-	free_dynarray(entries, (dynarray_free_cb)&free_xdb_metadata_entry);
+	dynarray_free(entries, (dynarray_free_cb)&free_xdb_metadata_entry);
 }
 
 typedef struct {

@@ -13,7 +13,7 @@ struct dynarray *dynarray_create(int size)
 	return o;
 }
 
-void free_dynarray(struct dynarray *o, dynarray_free_cb free_item)
+void dynarray_free(struct dynarray *o, dynarray_free_cb free_item)
 {
 	if (!o)
 		return;

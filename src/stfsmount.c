@@ -244,7 +244,7 @@ static void stfs_item_free(stfs_item *i)
 
 	switch (i->type) {
 	case STFS_ITEM_DIR:
-		free_dynarray(i->arg.dir_list, NULL);
+		dynarray_free(i->arg.dir_list, NULL);
 		break;
 	case STFS_ITEM_LINK:
 		free(i->arg.link);
@@ -347,7 +347,7 @@ static int parse_db_overrides(void)
 	}
 
 	free(datapath);
-	free_dynarray(dbs, &free);
+	dynarray_free(dbs, &free);
 	return 0;
 }
 
@@ -362,7 +362,7 @@ static int parse_cur_fs(void)
 		dltx_section_set_key(stfs_map, *it, NULL);
 	}
 
-	free_dynarray(files, &free);
+	dynarray_free(files, &free);
 	return 0;
 }
 
@@ -542,9 +542,9 @@ static void *stfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg)
 
 static void stfs_destroy(void *_ /*unused*/)
 {
-	free_dynarray(fs_dirs, NULL);
-	free_dynarray(fs_items, (dynarray_free_cb)stfs_item_free);
-	free_dynarray(dbs, (dynarray_free_cb)stfs_xdb_free);
+	dynarray_free(fs_dirs, NULL);
+	dynarray_free(fs_items, (dynarray_free_cb)stfs_item_free);
+	dynarray_free(dbs, (dynarray_free_cb)stfs_xdb_free);
 }
 
 static const struct fuse_operations stfs_oper = {
