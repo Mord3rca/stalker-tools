@@ -13,43 +13,48 @@ struct dynarray *dynarray_create(int size)
 	return o;
 }
 
-static bool _free_iterator(void *m, dynarray_free_cb free_callback)
-{
-	free_callback(m);
-	return true;
-}
-
-void free_dynarray(struct dynarray *o, dynarray_free_cb free_item)
+void dynarray_free(struct dynarray *o, dynarray_free_cb free_item)
 {
 	if (!o)
 		return;
 
 	if (free_item != NULL)
-		dynarray_foreach(o, (dynarray_cb)&_free_iterator, free_item);
+		DYNARRAY_INLINE_FOREACH(o, void)
+			free_item(*it);
 
 	free(o->arr);
 	free(o);
 }
 
+int dynarray_reserve(struct dynarray *array, size_t nsize)
+{
+	if (nsize < array->max_size)
+		return -1;
+
+	if (array->size == 0) {
+		free(array->arr);
+		array->arr = calloc(nsize, sizeof(void *));
+	} else
+		array->arr = reallocarray(array->arr, array->size, nsize);
+
+	array->max_size = nsize;
+
+	return 0;
+}
+
 void dynarray_foreach(struct dynarray *array, dynarray_cb callback, void *data)
 {
-	void **cur, **end;
-
-	for (cur = array->arr, end = array->arr + array->size; cur < end; cur++)
-		if (!callback(*cur, data))
+	DYNARRAY_INLINE_FOREACH(array, void)
+		if (!callback(*it, data))
 			break;
 }
 
 
 int dynarray_insert(struct dynarray *array, void *obj)
 {
-	size_t nsize;
-
-	if (array->size >= array->max_size) {
-		nsize = array->max_size + 64;
-		array->arr = reallocarray(array->arr, array->size, nsize);
-		array->max_size = nsize;
-	}
+	if (array->size >= array->max_size)
+		if (dynarray_reserve(array, array->max_size + 64) < 0)
+			return -1;
 
 	array->arr[array->size++] = obj;
 	return 0;
@@ -58,6 +63,9 @@ int dynarray_insert(struct dynarray *array, void *obj)
 int dynarray_remove(struct dynarray *array, void *obj)
 {
 	size_t pos;
+
+	if (!array)
+		return -1;
 
 	pos = dynarray_find_member_index(array, obj);
 	if (pos == -1)
@@ -69,55 +77,30 @@ int dynarray_remove(struct dynarray *array, void *obj)
 	return 0;
 }
 
-struct _find_member_index_args {
-	size_t pos;
-	void *member;
-	bool found;
-};
-
-static bool _find_member_iterator(void *o, struct _find_member_index_args *args)
-{
-	args->found = o == args->member;
-	args->pos++;
-	return !args->found;
-}
-
 size_t dynarray_find_member_index(struct dynarray *array, void *member)
 {
-	struct _find_member_index_args args;
+	size_t r = 0;
 
-	args.pos = -1;
-	args.found = false;
-	args.member = member;
+	if (!array || !member)
+		return -1;
 
-	dynarray_foreach(array, (dynarray_cb)&_find_member_iterator, (void *)&args);
-
-	return args.found ? args.pos : -1;
-}
-
-struct _find_iterator_args {
-	void *data;
-	void *result;
-	dynarray_cb callback;
-};
-
-static bool _dynarray_find_iterator(void *o, struct _find_iterator_args *args)
-{
-	if (args->callback(o, args->data)) {
-		args->result = o;
-		return false;
+	DYNARRAY_INLINE_FOREACH(array, void) {
+		if (*it == member)
+			return r;
+		r++;
 	}
-	return true;
+
+	return -1;
 }
 
 void *dynarray_find(struct dynarray *array, dynarray_cb callback, void *data)
 {
-	struct _find_iterator_args args;
+	if (!array)
+		return NULL;
 
-	args.data = data;
-	args.result = NULL;
-	args.callback = callback;
+	DYNARRAY_INLINE_FOREACH(array, void)
+		if (callback(*it, data))
+			return *it;
 
-	dynarray_foreach(array, (dynarray_cb)&_dynarray_find_iterator, (void *)&args);
-	return args.result;
+	return NULL;
 }

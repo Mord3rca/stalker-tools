@@ -4,6 +4,7 @@
 #include "main.h"
 
 CU_SuiteInfo suites[] = {
+	{"Dynarray", test_dynarray_init, test_dynarray_cleanup, NULL, NULL, dynarray_tests},
 	{"STCore FS Path", fs_path_init, fs_path_cleanup, NULL, NULL, fs_path_tests},
 	CU_SUITE_INFO_NULL,
 };

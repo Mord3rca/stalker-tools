@@ -63,10 +63,7 @@ DLTXKey *dltx_create_key(const char name[], const char value[])
 	DLTXKey *k = malloc(sizeof(DLTXKey));
 
 	k->name = strdup(name);
-	k->value = NULL;
-
-	if (value != NULL)
-		k->value = strdup(value);
+	k->value = value ? strdup(value) : NULL;
 
 #ifdef DLTX_TRACE
 	k->file = NULL;
@@ -89,10 +86,7 @@ DLTXKey *dltx_key_copy(const DLTXKey *k)
 	DLTXKey *r = malloc(sizeof(DLTXKey));
 
 	r->name = strdup(k->name);
-	r->value = NULL;
-
-	if (k->value)
-		r->value = strdup(k->value);
+	r->value = k->value ? strdup(k->value) : NULL;
 
 #ifdef DLTX_TRACE
 	r->file = k->file;
@@ -162,8 +156,25 @@ void free_dltx_section(DLTXSection *s)
 		free(s->inheritance);
 	}
 
-	free_dynarray(s->keys, (dynarray_free_cb)&free_dltx_key);
+	dynarray_free(s->keys, (dynarray_free_cb)&free_dltx_key);
 	free(s);
+}
+
+DLTXSection *dltx_section_copy(DLTXSection *s)
+{
+	DLTXSection *r;
+
+	if (!s)
+		return NULL;
+
+	r = dltx_create_section(s->name);
+	if (!r)
+		return NULL;
+
+	DYNARRAY_INLINE_FOREACH(s->keys, DLTXKey)
+		dynarray_insert(r->keys, dltx_key_copy(*it));
+
+	return r;
 }
 
 DLTXKey *dltx_section_get_key(DLTXSection *sec, const char name[])
@@ -210,7 +221,7 @@ DLTX_RETURN_CODE dltx_section_drop_all_keys(DLTXSection *sec)
 	if (sec->keys->size == 0)
 		return NO_ERROR;
 
-	free_dynarray(sec->keys, (void (*)(void *))&free_dltx_key);
+	dynarray_free(sec->keys, (void (*)(void *))&free_dltx_key);
 	sec->keys = dynarray_create(1);
 
 	return NO_ERROR;
@@ -303,9 +314,9 @@ DLTX *dltx_create(void)
 
 void free_dltx(DLTX *l)
 {
-	free_dynarray(l->sections, (dynarray_free_cb)&free_dltx_section);
+	dynarray_free(l->sections, (dynarray_free_cb)&free_dltx_section);
 #ifdef DLTX_TRACE
-	free_dynarray(l->files, &free);
+	dynarray_free(l->files, &free);
 #endif
 	free(l);
 }
@@ -448,6 +459,55 @@ void dltx_sort(DLTX *root)
 		(int (*)(const void *, const void *))&_dltx_section_name_cmp
 	);
 	root->flags |= DLTX_SORTED;
+}
+
+#ifdef DLTX_TRACE
+static char *_dltx_fix_files_ptr(DLTX *r, char *ptr)
+{
+	DYNARRAY_INLINE_FOREACH(r->files, char)
+		if (strcmp(ptr, *it) == 0)
+			return *it;
+
+	return NULL;
+}
+
+static void _dltx_fix_keys(DLTX *r, DLTXSection *s)
+{
+	DYNARRAY_INLINE_FOREACH(s->keys, DLTXKey)
+		(*it)->file = _dltx_fix_files_ptr(r, (*it)->file);
+}
+#else
+static void _dltx_fix_keys(DLTX *r, DLTXSection *s) {}
+#endif
+
+DLTX *dltx_copy(DLTX *root)
+{
+	DLTX *r;
+	DLTXSection *s;
+
+	if (!root)
+		return NULL;
+
+	r = dltx_create();
+	if (!r)
+		return NULL;
+
+	r->flags = root->flags;
+
+#ifdef DLTX_TRACE
+	dynarray_reserve(r->files, root->files->size);
+	DYNARRAY_INLINE_FOREACH(root->files, const char)
+		dynarray_insert(r->files, strdup(*it));
+#endif
+
+	dynarray_reserve(r->sections, root->sections->size);
+	DYNARRAY_INLINE_FOREACH(root->sections, DLTXSection) {
+		s = dltx_section_copy(*it);
+		_dltx_fix_keys(r, s);
+		dynarray_insert(r->sections, s);
+	}
+
+	return r;
 }
 
 static void _print_all_keys(DLTXSection *s, FILE *out)

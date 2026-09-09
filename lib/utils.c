@@ -54,7 +54,7 @@ char **split(char *str, const char *delims, size_t *size)
 	if (size)
 		*size = dyn->size - 1;
 
-	free_dynarray(dyn, NULL);
+	dynarray_free(dyn, NULL);
 	return result;
 }
 

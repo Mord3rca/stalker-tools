@@ -5,14 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "dltx_parser.h"
 #include "dynarray.h"
 #include "filesystem.h"
 #include "utils.h"
 
-const size_t dltx_parser_buffer_size = 256*1024;
-const size_t dltx_parser_max_inheritence = 16;
+static const size_t dltx_parser_max_inheritence = 16;
 
 static const char _orphan_section_name[] = "__default__";
 
@@ -89,6 +89,7 @@ struct _DLTXParser_s {
 	DLTXSection *cur_section;
 
 	struct dynarray *soverrides;
+	struct dynarray *fbuffs;
 
 	size_t cur_line;
 	char *cur_file_path;
@@ -279,17 +280,17 @@ void dltx_parser_default_on_new_key(DLTXParser *root, char key[], char value[])
 void dltx_parser_default_on_include_directive(DLTXParser *root, char path[])
 {
 	DLTX_RETURN_CODE err;
-	char *from = root->cur_file_path;
-	char *to = filesystem_path_append2(from, path);
+	stcore_filesystem_path to;
 	size_t sline = root->cur_line;
+	char *from = root->cur_file_path;
 
-	err = dltx_parser_process_file(root, to);
+	stcore_filesystem_path_append2(&to, from, path);
+
+	err = dltx_parser_process_file(root, to.target);
 	if (err != NO_ERROR)
-		root->on_error(root, FILE_READ_ERROR, "IO error while processing %s", to);
+		root->on_error(root, FILE_READ_ERROR, "IO error while processing %s", to.target);
 #ifdef DLTX_TRACE
-	dynarray_insert(root->bases->files, to);
-#else
-	free(to);
+	dynarray_insert(root->bases->files, strdup(to.target));
 #endif
 	root->cur_file_path = from;
 	root->cur_line = sline;
@@ -297,24 +298,22 @@ void dltx_parser_default_on_include_directive(DLTXParser *root, char path[])
 
 void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[])
 {
-	fs_return_code err;
-	char **paths = NULL;
-	char *to = filesystem_path_append2(root->cur_file_path, path);
+	struct dynarray *paths;
+	stcore_filesystem_path to;
 
-	err = filesystem_glob(to, root->cur_file_path, &paths);
-	if (err != FS_NO_ERROR) {
-		if (err != FS_GLOB_NO_MATCH && !root->is_parsing_modfile)
-			root->on_error(root, FILE_READ_ERROR, "Error while globbing %s", to);
-		free(to);
+	stcore_filesystem_path_append2(&to, root->cur_file_path, path);
+
+	paths = filesystem_glob(to.target, root->cur_file_path);
+	if (!paths) {
+		if (!root->is_parsing_modfile)
+			root->on_error(root, FILE_READ_ERROR, "Error while globbing %s", to.target);
 		return;
 	}
 
-	for (size_t i = 0; paths[i]; i++) {
-		root->on_include_directive(root, paths[i]);
-		free(paths[i]);
+	DYNARRAY_INLINE_FOREACH(paths, char) {
+		root->on_include_directive(root, *it);
 	}
-	free(to);
-	free(paths);
+	dynarray_free(paths, &free);
 }
 
 static bool _is_globbing(const char path[])
@@ -347,7 +346,7 @@ void dltx_parser_default_process_line(DLTXParser *root, char *line)
 	// Start with a # so probably a header
 	if (line[0] == '#' && regexec(&dltx_include_regex, line, max_group, pmatch, 0) == 0) {
 		line[pmatch[1].rm_eo] = 0;
-		filesystem_path_tolower(line + pmatch[1].rm_so);
+		//filesystem_path_tolower(line + pmatch[1].rm_so);
 		if (_is_globbing(line + pmatch[1].rm_so))
 			root->on_glob_include_directive(root, line + pmatch[1].rm_so);
 		else
@@ -414,6 +413,7 @@ DLTXParser *dltx_create_parser(void)
 	e->deletions = dltx_create();
 
 	e->soverrides = dynarray_create(32);
+	e->fbuffs = dynarray_create(8);
 
 	e->err = NO_ERROR;
 
@@ -437,7 +437,8 @@ void free_dltx_parser(DLTXParser *e)
 	free_dltx(e->results);
 	free_dltx(e->overrides);
 	free_dltx(e->deletions);
-	free_dynarray(e->soverrides, NULL);
+	dynarray_free(e->soverrides, NULL);
+	dynarray_free(e->fbuffs, &free);
 	free(e);
 }
 
@@ -660,7 +661,7 @@ static void _dltx_parser_evaluate_all(DLTXParser *root)
 	// Apply resolution to output
 	dltx_sort(root->results);
 	// TODO: Merge instead of replacing
-	free_dynarray(root->output->sections, (dynarray_free_cb)&free_dltx_section);
+	dynarray_free(root->output->sections, (dynarray_free_cb)&free_dltx_section);
 	root->output->sections = root->results->sections;
 	root->results->sections = dynarray_create(1);
 
@@ -669,9 +670,9 @@ static void _dltx_parser_evaluate_all(DLTXParser *root)
 #ifdef DLTX_TRACE
 	if (root->output->files->size > 0) {
 		dynarray_foreach(root->results->files, (dynarray_cb)&_merge_files_array, root->output->files);
-		free_dynarray(root->results->files, NULL);
+		dynarray_free(root->results->files, NULL);
 	} else {
-		free_dynarray(root->output->files, NULL);
+		dynarray_free(root->output->files, NULL);
 		root->output->files = root->results->files;
 	}
 	root->results->files = dynarray_create(1);
@@ -692,6 +693,23 @@ void _dltx_apply_overrides(DLTXParser *root)
 	_dltx_parser_evaluate_all(root);
 }
 
+static char *get_modfile_glob_path(const char path[])
+{
+	stcore_filesystem_path base;
+	char *temp, buffer[PATH_MAX + 64] = {0};
+
+	stcore_filesystem_path_init(&base, path);
+	stcore_filesystem_path_basename(&base);
+
+	temp = strstr(base.target, ".ltx");
+	if (temp)
+		*temp = 0;
+
+	snprintf(buffer, PATH_MAX + 64, "mod_%s_*.ltx", base.target);
+
+	return strdup(buffer);
+}
+
 static void _dltx_include_modfile(DLTXParser *root)
 {
 	char *glob;
@@ -701,7 +719,7 @@ static void _dltx_include_modfile(DLTXParser *root)
 
 	root->is_parsing_modfile = true;
 
-	glob = filesystem_get_modfile_glob_path(root->cur_file_path);
+	glob = get_modfile_glob_path(root->cur_file_path);
 
 	root->on_glob_include_directive(root, glob);
 
@@ -749,23 +767,27 @@ void _dltx_parser_process_buffer(DLTXParser *root, char *buffer, size_t buff_siz
 DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filename[])
 {
 	char *buffer;
+	struct stat statbuf = {0};
 	FILE *file = fopen(filename, "r");
-	DLTX_RETURN_CODE err;
 
 	if (file == NULL)
 		return FILE_READ_ERROR;
 
-	buffer = malloc(dltx_parser_buffer_size);
+	fstat(fileno(file), &statbuf);
 
-	fread(buffer, dltx_parser_buffer_size-1, 1, file);
-	buffer[ftell(file)] = 0;
+	buffer = malloc(statbuf.st_size + 1);
 
-	if (feof(file) == 0) {
+	fread(buffer, statbuf.st_size, 1, file);
+	buffer[statbuf.st_size] = 0;
+
+	if (feof(file) != 0) {
 		free(buffer);
 		fclose(file);
 		return FILE_TOO_BIG;
 	}
 	fclose(file);
+
+	dynarray_insert(reader->fbuffs, buffer);
 
 	reader->cur_file_path = strdup(filename);
 	reader->cur_line = 1;
@@ -773,14 +795,12 @@ DLTX_RETURN_CODE dltx_parser_process_file(DLTXParser *reader, const char filenam
 	dynarray_insert(reader->results->files, reader->cur_file_path);
 #endif
 	// Processing loop
-	_dltx_parser_process_buffer(reader, buffer, dltx_parser_buffer_size);
-	err = reader->err;
+	_dltx_parser_process_buffer(reader, buffer, statbuf.st_size);
 
-	free(buffer);
 #ifndef DLTX_TRACE
 	free(reader->cur_file_path);
 #endif
-	return err;
+	return reader->err;
 }
 
 // Entrypoint
