@@ -31,7 +31,12 @@ int dynarray_reserve(struct dynarray *array, size_t nsize)
 	if (nsize < array->max_size)
 		return -1;
 
-	array->arr = reallocarray(array->arr, array->size, nsize);
+	if (array->size == 0) {
+		free(array->arr);
+		array->arr = calloc(nsize, sizeof(void *));
+	} else
+		array->arr = reallocarray(array->arr, array->size, nsize);
+
 	array->max_size = nsize;
 
 	return 0;
