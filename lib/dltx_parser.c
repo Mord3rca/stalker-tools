@@ -313,7 +313,7 @@ void dltx_parser_default_on_glob_include_directive(DLTXParser *root, char path[]
 	DYNARRAY_INLINE_FOREACH(paths, char) {
 		root->on_include_directive(root, *it);
 	}
-	free_dynarray(paths, &free);
+	dynarray_free(paths, &free);
 }
 
 static bool _is_globbing(const char path[])
@@ -437,8 +437,8 @@ void free_dltx_parser(DLTXParser *e)
 	free_dltx(e->results);
 	free_dltx(e->overrides);
 	free_dltx(e->deletions);
-	free_dynarray(e->soverrides, NULL);
-	free_dynarray(e->fbuffs, &free);
+	dynarray_free(e->soverrides, NULL);
+	dynarray_free(e->fbuffs, &free);
 	free(e);
 }
 
@@ -661,7 +661,7 @@ static void _dltx_parser_evaluate_all(DLTXParser *root)
 	// Apply resolution to output
 	dltx_sort(root->results);
 	// TODO: Merge instead of replacing
-	free_dynarray(root->output->sections, (dynarray_free_cb)&free_dltx_section);
+	dynarray_free(root->output->sections, (dynarray_free_cb)&free_dltx_section);
 	root->output->sections = root->results->sections;
 	root->results->sections = dynarray_create(1);
 
@@ -670,9 +670,9 @@ static void _dltx_parser_evaluate_all(DLTXParser *root)
 #ifdef DLTX_TRACE
 	if (root->output->files->size > 0) {
 		dynarray_foreach(root->results->files, (dynarray_cb)&_merge_files_array, root->output->files);
-		free_dynarray(root->results->files, NULL);
+		dynarray_free(root->results->files, NULL);
 	} else {
-		free_dynarray(root->output->files, NULL);
+		dynarray_free(root->output->files, NULL);
 		root->output->files = root->results->files;
 	}
 	root->results->files = dynarray_create(1);

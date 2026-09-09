@@ -16,7 +16,7 @@ typedef void (*dynarray_free_cb)(void *);
 	for (T **it = (T **)D->arr, **itend = (T **)(D->arr + D->size); it < itend; it++)
 
 struct dynarray *dynarray_create(int size);
-void free_dynarray(struct dynarray *array, dynarray_free_cb free_item);
+void dynarray_free(struct dynarray *array, dynarray_free_cb free_item);
 
 int dynarray_reserve(struct dynarray *array, size_t nsize);
 
